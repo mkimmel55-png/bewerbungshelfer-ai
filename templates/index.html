@@ -34,6 +34,13 @@
             margin-top: 0;
         }
 
+        .version {
+            margin-top: -8px;
+            margin-bottom: 22px;
+            color: #666;
+            font-size: 14px;
+        }
+
         label {
             display: block;
             margin-top: 18px;
@@ -55,10 +62,21 @@
             resize: vertical;
         }
 
-        button,
-        .download-button {
-            display: inline-block;
+        .job-ad {
+            min-height: 220px;
+        }
+
+        .button-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
             margin-top: 20px;
+        }
+
+        button,
+        .download-button,
+        .copy-button {
+            display: inline-block;
             padding: 12px 20px;
             border: 0;
             border-radius: 6px;
@@ -72,30 +90,61 @@
             color: white;
         }
 
-        .download-button {
+        .secondary-button {
             background: #e8e8e8;
             color: #222;
         }
 
-        .notice {
-            margin-bottom: 20px;
-            padding: 12px;
-            background: #fff3cd;
-            border-radius: 6px;
+        .generate-button {
+            background: #2457c5;
+            color: white;
         }
 
+        .download-button {
+            background: #e8e8e8;
+            color: #222;
+            margin-top: 12px;
+        }
+
+        .copy-button {
+            background: #e8e8e8;
+            color: #222;
+            margin-top: 12px;
+        }
+
+        .notice,
+        .success,
         .error {
             margin-bottom: 20px;
             padding: 12px;
-            background: #f8d7da;
             border-radius: 6px;
+        }
+
+        .notice {
+            background: #fff3cd;
+        }
+
+        .success {
+            background: #d4edda;
+        }
+
+        .error {
+            background: #f8d7da;
+        }
+
+        .section-box {
+            margin-top: 28px;
+            padding: 20px;
+            border-radius: 8px;
+            background: #fafafa;
+            border: 1px solid #ddd;
         }
 
         .results-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 16px;
-            margin-top: 30px;
+            margin-top: 20px;
         }
 
         .result-box {
@@ -110,6 +159,10 @@
 
         .missing {
             border-left: 5px solid #c62828;
+        }
+
+        .match-rate {
+            border-left: 5px solid #2457c5;
         }
 
         .letter {
@@ -129,6 +182,12 @@
             padding-left: 20px;
         }
 
+        .small-hint {
+            margin-top: 6px;
+            font-size: 13px;
+            color: #666;
+        }
+
         @media (max-width: 700px) {
             .page {
                 padding: 10px;
@@ -141,6 +200,16 @@
             .results-grid {
                 grid-template-columns: 1fr;
             }
+
+            .button-row {
+                flex-direction: column;
+            }
+
+            button,
+            .download-button,
+            .copy-button {
+                width: 100%;
+            }
         }
     </style>
 </head>
@@ -152,9 +221,13 @@
 
         <h1>Bewerbungshelfer AI</h1>
 
+        <div class="version">
+            Version 0.6 · Die Anwendung erfindet keine Qualifikationen.
+        </div>
+
         <div class="notice">
-            Bitte nur echte Berufserfahrung und Qualifikationen eingeben.
-            Die Anwendung erfindet keine Qualifikationen.
+            Bitte nur echte Berufserfahrung und vorhandene Qualifikationen eintragen.
+            Die Stellenanzeige kann komplett eingefügt werden.
         </div>
 
         {% if error %}
@@ -163,61 +236,137 @@
         </div>
         {% endif %}
 
-        <form method="post">
-
-            <label for="role">Stellenbezeichnung</label>
-            <input
-                type="text"
-                id="role"
-                name="role"
-                value="{{ form_data.role }}"
-            >
-
-            <label for="requirements">
-                Anforderungen der Stellenanzeige
-            </label>
-            <textarea
-                id="requirements"
-                name="requirements"
-                placeholder="Zum Beispiel: Führerschein CE, Berufserfahrung, Deutschkenntnisse"
-            >{{ form_data.requirements }}</textarea>
-
-            <label for="experience">
-                Passende Berufserfahrung
-            </label>
-            <textarea
-                id="experience"
-                name="experience"
-            >{{ form_data.experience }}</textarea>
-
-            <label for="qualifications">
-                Vorhandene Qualifikationen
-            </label>
-            <textarea
-                id="qualifications"
-                name="qualifications"
-                placeholder="Mehrere Angaben mit Komma trennen"
-            >{{ form_data.qualifications }}</textarea>
-
-            <label for="focus">
-                Was soll besonders hervorgehoben werden?
-            </label>
-            <textarea
-                id="focus"
-                name="focus"
-            >{{ form_data.focus }}</textarea>
-
-            <button type="submit">
-                Bewerbung analysieren
-            </button>
-
-        </form>
-                 {% if match_rate is not none %}
-        <div class="result-box">
-            <h2>Trefferquote</h2>
-            <p><strong>{{ match_rate }} %</strong></p>
+        {% if success %}
+        <div class="success">
+            {{ success }}
         </div>
         {% endif %}
+
+        <form method="post">
+
+            <div class="section-box">
+                <h2>1. Stellenanzeige</h2>
+
+                <label for="job_ad">
+                    Komplette Stellenanzeige
+                </label>
+
+                <textarea
+                    id="job_ad"
+                    name="job_ad"
+                    class="job-ad"
+                    placeholder="Hier die komplette Stellenanzeige einfügen..."
+                >{{ form_data.job_ad }}</textarea>
+
+                <div class="small-hint">
+                    Wenn Stellenbezeichnung oder Anforderungen leer bleiben,
+                    versucht die Anwendung diese Angaben aus der Stellenanzeige zu erkennen.
+                </div>
+
+                <label for="role">
+                    Stellenbezeichnung
+                </label>
+
+                <input
+                    type="text"
+                    id="role"
+                    name="role"
+                    value="{{ form_data.role }}"
+                    placeholder="Zum Beispiel: LKW-Fahrer CE"
+                >
+
+                <label for="requirements">
+                    Anforderungen der Stellenanzeige
+                </label>
+
+                <textarea
+                    id="requirements"
+                    name="requirements"
+                    placeholder="Zum Beispiel: Führerschein CE, Berufserfahrung, Deutschkenntnisse"
+                >{{ form_data.requirements }}</textarea>
+            </div>
+
+            <div class="section-box">
+                <h2>2. Bewerberprofil</h2>
+
+                <label for="experience">
+                    Passende Berufserfahrung
+                </label>
+
+                <textarea
+                    id="experience"
+                    name="experience"
+                    placeholder="Zum Beispiel: 8 Jahre Berufserfahrung als LKW-Fahrer..."
+                >{{ form_data.experience }}</textarea>
+
+                <label for="qualifications">
+                    Vorhandene Qualifikationen
+                </label>
+
+                <textarea
+                    id="qualifications"
+                    name="qualifications"
+                    placeholder="Zum Beispiel: Führerschein CE, Fahrerkarte, Ladungssicherung"
+                >{{ form_data.qualifications }}</textarea>
+
+                <label for="focus">
+                    Was soll besonders hervorgehoben werden?
+                </label>
+
+                <textarea
+                    id="focus"
+                    name="focus"
+                    placeholder="Zum Beispiel: Nachttouren, Zuverlässigkeit, Nahverkehr"
+                >{{ form_data.focus }}</textarea>
+
+                <div class="button-row">
+                    <button
+                        type="submit"
+                        name="action"
+                        value="save_profile"
+                        class="secondary-button"
+                    >
+                        Bewerberprofil speichern
+                    </button>
+                </div>
+            </div>
+
+            <div class="section-box">
+                <h2>3. Bewerbung auswerten</h2>
+
+                <div class="button-row">
+
+                    <button
+                        type="submit"
+                        name="action"
+                        value="analyze"
+                    >
+                        Bewerbung analysieren
+                    </button>
+
+                    <button
+                        type="submit"
+                        name="action"
+                        value="generate_letter"
+                        class="generate-button"
+                    >
+                        Anschreiben erstellen
+                    </button>
+
+                </div>
+            </div>
+
+        </form>
+
+        {% if match_rate is not none %}
+        <div class="result-box match-rate">
+            <h2>Trefferquote</h2>
+            <p>
+                <strong>{{ match_rate }} %</strong>
+            </p>
+        </div>
+        {% endif %}
+
         {% if matched or missing %}
         <div class="results-grid">
 
@@ -263,19 +412,49 @@
         <div class="letter">
             <h2>Anschreiben-Entwurf</h2>
 
-            <pre>{{ letter }}</pre>
+            <pre id="letterText">{{ letter }}</pre>
 
-            <a
-                class="download-button"
-                href="/download-letter"
-            >
-                Anschreiben als TXT herunterladen
-            </a>
+            <div class="button-row">
+
+                <button
+                    type="button"
+                    class="copy-button"
+                    onclick="copyLetter()"
+                >
+                    Bewerbung kopieren
+                </button>
+
+                <a
+                    class="download-button"
+                    href="/download-letter"
+                >
+                    Anschreiben als TXT herunterladen
+                </a>
+
+            </div>
         </div>
         {% endif %}
 
     </div>
 </div>
+
+<script>
+function copyLetter() {
+    const letter = document.getElementById("letterText");
+
+    if (!letter) {
+        return;
+    }
+
+    navigator.clipboard.writeText(letter.innerText)
+        .then(function() {
+            alert("Anschreiben wurde kopiert.");
+        })
+        .catch(function() {
+            alert("Kopieren war nicht möglich.");
+        });
+}
+</script>
 
 </body>
 </html>
