@@ -1,6 +1,6 @@
 """
 Bewerbungshelfer AI
-Weboberfläche für Version 0.4.0
+Weboberfläche für Version 0.5.0
 """
 
 from io import BytesIO
@@ -10,6 +10,7 @@ from flask import Flask, render_template, request, send_file
 from app import (
     split_items,
     compare_requirements,
+    calculate_match_rate,
     build_summary,
     build_letter,
 )
@@ -27,6 +28,7 @@ def index():
     letter = None
     matched = []
     missing = []
+    match_rate = None
     error = None
 
     form_data = {
@@ -74,6 +76,10 @@ def index():
                 requirements,
                 qualifications,
             )
+             match_rate = calculate_match_rate(
+                requirements,
+                matched,
+            )
 
             result = build_summary(
                 form_data["role"],
@@ -81,6 +87,14 @@ def index():
                 qualifications,
                 matched,
                 missing,
+            )
+
+            letter = build_letter(
+                form_data["role"],
+                form_data["experience"],
+                qualifications,
+                form_data["focus"],
+                matched,
             )
 
             letter = build_letter(
@@ -99,6 +113,7 @@ def index():
         letter=letter,
         matched=matched,
         missing=missing,
+        match_rate=match_rate,
         error=error,
         form_data=form_data,
     )
