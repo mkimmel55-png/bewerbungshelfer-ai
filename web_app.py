@@ -1,9 +1,12 @@
 """
 Bewerbungshelfer AI
-Weboberfläche für Version 0.3.0
+Weboberfläche für Version 0.4.0
 """
 
-from flask import Flask, render_template, request
+from io import BytesIO
+
+from flask import Flask, render_template, request, send_file
+
 from app import (
     split_items,
     compare_requirements,
@@ -13,55 +16,108 @@ from app import (
 
 app = Flask(__name__)
 
+last_letter = ""
+
 
 @app.route("/", methods=["GET", "POST"])
 def index():
+    global last_letter
+
     result = None
     letter = None
+    matched = []
+    missing = []
+    error = None
+
+    form_data = {
+        "role": "",
+        "requirements": "",
+        "experience": "",
+        "qualifications": "",
+        "focus": "",
+    }
 
     if request.method == "POST":
-        role = request.form.get("role", "").strip()
-        requirements_input = request.form.get(
+        form_data["role"] = request.form.get("role", "").strip()
+        form_data["requirements"] = request.form.get(
             "requirements", ""
         ).strip()
-        experience = request.form.get(
+        form_data["experience"] = request.form.get(
             "experience", ""
         ).strip()
-        qualifications_input = request.form.get(
+        form_data["qualifications"] = request.form.get(
             "qualifications", ""
         ).strip()
-        focus = request.form.get(
+        form_data["focus"] = request.form.get(
             "focus", ""
         ).strip()
 
-        requirements = split_items(requirements_input)
-        qualifications = split_items(qualifications_input)
+        if not form_data["role"]:
+            error = "Bitte eine Stellenbezeichnung eingeben."
 
-        matched, missing = compare_requirements(
-            requirements,
-            qualifications,
-        )
+        elif not form_data["requirements"]:
+            error = "Bitte mindestens eine Stellenanforderung eingeben."
 
-        result = build_summary(
-            role,
-            requirements,
-            qualifications,
-            matched,
-            missing,
-        )
+        elif not form_data["qualifications"]:
+            error = "Bitte mindestens eine vorhandene Qualifikation eingeben."
 
-        letter = build_letter(
-            role,
-            experience,
-            qualifications,
-            focus,
-            matched,
-        )
+        else:
+            requirements = split_items(
+                form_data["requirements"]
+            )
+
+            qualifications = split_items(
+                form_data["qualifications"]
+            )
+
+            matched, missing = compare_requirements(
+                requirements,
+                qualifications,
+            )
+
+            result = build_summary(
+                form_data["role"],
+                requirements,
+                qualifications,
+                matched,
+                missing,
+            )
+
+            letter = build_letter(
+                form_data["role"],
+                form_data["experience"],
+                qualifications,
+                form_data["focus"],
+                matched,
+            )
+
+            last_letter = letter
 
     return render_template(
         "index.html",
         result=result,
         letter=letter,
+        matched=matched,
+        missing=missing,
+        error=error,
+        form_data=form_data,
+    )
+
+
+@app.route("/download-letter")
+def download_letter():
+    if not last_letter:
+        return "Noch kein Anschreiben vorhanden.", 400
+
+    file_data = BytesIO(
+        last_letter.encode("utf-8")
+    )
+
+    return send_file(
+        file_data,
+        as_attachment=True,
+        download_name="anschreiben.txt",
+        mimetype="text/plain; charset=utf-8",
     )
 
 
