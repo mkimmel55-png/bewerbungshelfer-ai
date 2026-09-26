@@ -361,6 +361,7 @@
         {% if match_rate is not none %}
         <div class="result-box match-rate">
             <h2>Trefferquote</h2>
+
             <p>
                 <strong>{{ match_rate }} %</strong>
             </p>
@@ -404,6 +405,7 @@
         {% if result %}
         <div class="letter">
             <h2>Zusammenfassung</h2>
+
             <pre>{{ result }}</pre>
         </div>
         {% endif %}
@@ -429,6 +431,13 @@
                     href="/download-letter"
                 >
                     Anschreiben als TXT herunterladen
+                </a>
+
+                <a
+                    class="download-button"
+                    href="/download-letter-pdf"
+                >
+                    Anschreiben als PDF herunterladen
                 </a>
 
             </div>
