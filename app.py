@@ -1,10 +1,10 @@
-"""
-Bewerbungshelfer AI
-Version 0.6
-"""
+"""Bewerbungshelfer AI command-line application."""
 
 import re
 from textwrap import fill
+
+
+APP_VERSION = "0.8.0"
 
 
 # Wörter, die für den Vergleich wenig Aussagekraft haben
@@ -201,6 +201,7 @@ def requirement_matches(
 def compare_requirements(
     requirements: list[str],
     qualifications: list[str],
+    experience: str = "",
 ) -> tuple[list[str], list[str]]:
     """
     Vergleicht jede Anforderung einzeln mit den
@@ -210,13 +211,12 @@ def compare_requirements(
     matched = []
     missing = []
 
+    profile_text = "\n".join([experience, *qualifications])
+
     for requirement in requirements:
-        found = any(
-            requirement_matches(
-                requirement,
-                qualification,
-            )
-            for qualification in qualifications
+        found = requirement_matches(
+            requirement,
+            profile_text,
         )
 
         if found:
@@ -479,6 +479,7 @@ def main() -> None:
     matched, missing = compare_requirements(
         requirements,
         qualifications,
+        experience,
     )
 
     print(

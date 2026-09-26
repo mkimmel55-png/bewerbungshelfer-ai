@@ -2,6 +2,16 @@
 
 Ein kleines Open-Source-Projekt, das Bewerberinnen und Bewerbern dabei hilft, Stellenanzeigen strukturiert auszuwerten und passende Bewerbungsunterlagen vorzubereiten.
 
+## Aktuelle Version: v0.8.0
+
+- Abschnittsbasierte Erkennung von Anforderungen aus vollständigen Anzeigen
+- „Wir bieten“, Benefits, Aufgaben und allgemeine Einleitung werden nicht als Anforderungen gezählt
+- Stellenbezeichnung wird auch aus mehrzeiligen Einleitungssätzen erkannt
+- Berufserfahrung und Qualifikationen werden gemeinsam geprüft
+- CZV bleibt von deutscher Qualifikation/Modul 95 getrennt
+- Optionale Anforderungen („von Vorteil“, „wünschenswert“) werden geringer gewichtet
+- Anforderungen werden bei jeder Analyse aus der aktuellen Anzeige neu erzeugt
+
 ## Funktionen
 
 - Anforderungen aus einer Stellenanzeige erfassen
@@ -65,7 +75,10 @@ http://127.0.0.1:5000
 
 ## Vergleichslogik
 
-Die aktuelle Version verwendet eine einfache textbasierte Vergleichslogik. Eine Anforderung gilt als passend, wenn sie textlich mit einer vorhandenen Qualifikation übereinstimmt oder darin enthalten ist.
+Die Weboberfläche erkennt fachliche Konzepte und gleicht sie konservativ mit der
+Kombination aus Berufserfahrung und Qualifikationen ab. Optionale Anforderungen
+werden mit halbem Gewicht bewertet. Die Trefferquote ist daher eine gewichtete
+Orientierung und kein automatisches Einstellungsurteil.
 
 ## Datenschutz
 
@@ -130,6 +143,17 @@ Fehlerbehebung und Dokumentationspflege. Neu:
 - doppelten Aufruf zur Erstellung des Anschreibens entfernt
 - Versionsangabe der Weboberfläche aktualisiert
 - doppelte Dokumentation zu v0.4.0 bereinigt
+
+### v0.8.0
+
+- Abschnittsbasierte Erkennung verhindert Anforderungen aus „Wir bieten“/Benefits
+- Werbe- und Einleitungssätze sowie reine Aufgaben werden ausgeschlossen
+- Rollenextraktion aus vollständigen, mehrzeiligen Anzeigen verbessert
+- Berufserfahrung und Qualifikationen werden gemeinsam ausgewertet
+- CZV wird nicht als deutsche Module-95-Qualifikation gewertet
+- optionale Anforderungen werden mit halbem Gewicht bewertet
+- Anforderungen werden bei jeder Analyse aus der aktuellen Anzeige neu erzeugt
+- Regressionstests für die LKW-/Berufskraftfahrer-CE-Beispielanzeige ergänzt
 
 ## Geplante Funktionen
 

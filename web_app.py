@@ -1,7 +1,4 @@
-"""
-Bewerbungshelfer AI
-Weboberfläche Version 0.7.1
-"""
+"""Bewerbungshelfer AI web application."""
 
 import json
 import re
@@ -18,6 +15,8 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
 
 
 app = Flask(__name__)
+
+APP_VERSION = "0.8.0"
 
 PROFILE_FILE = Path("applicant_profile.json")
 
@@ -466,7 +465,8 @@ def requirement_matches(
             profile_concepts
         )
 
-    # Fallback nur bei deutlicher direkter Textübereinstimmung
+    # Fallback nur bei konservativer direkter Textübereinstimmung.  Freie
+    # Werbesätze sollen nicht durch einzelne gemeinsame Wörter treffen.
     req = normalize(requirement)
     profile = normalize(profile_text)
 
@@ -496,10 +496,11 @@ def requirement_matches(
     if not important_words:
         return False
 
+    profile_words = set(profile.split())
     matched_words = sum(
         1
         for word in important_words
-        if word in profile
+        if word in profile_words
     )
 
     # mindestens zwei deutliche Begriffe
@@ -510,7 +511,7 @@ def requirement_matches(
             == len(important_words)
         )
 
-    return matched_words >= 2
+    return matched_words / len(important_words) >= 0.75
 
 
 def compare_requirements(
@@ -728,7 +729,26 @@ def extract_role(job_ad):
         "assistenz",
     )
 
-    for line in lines[:15]:
+    # Viele Anzeigen nennen die Stelle nur in einem Einleitungssatz, z. B.
+    # "Wir suchen ... einen zuverlässigen LKW-Fahrer / Berufskraftfahrer ...".
+    # Den Satz selbst nicht als Anforderung übernehmen, aber die Berufsbezeichnung
+    # daraus sauber herauslösen.
+    intro_pattern = re.compile(
+        r"((?:lkw[- ]fahrer(?:in)?|berufskraftfahrer(?:in)?|"
+        r"kraftfahrer(?:in)?|chauffeur|sachbearbeiter|support|assistenz)"
+        r"(?:\s*/\s*(?:lkw[- ]fahrer(?:in)?|berufskraftfahrer(?:in)?|"
+        r"kraftfahrer(?:in)?))?)",
+        re.IGNORECASE,
+    )
+
+    intro_text = " ".join(lines[:20])
+    match = intro_pattern.search(intro_text)
+    if match:
+        role = re.sub(r"\s+", " ", match.group(1)).strip(" ,;:-")
+        if role:
+            return role
+
+    for line in lines[:20]:
 
         cleaned = re.sub(
             r"^[\-\*\u2022✓✔►▪]+\s*",
@@ -744,9 +764,7 @@ def extract_role(job_ad):
                 keyword in lower
                 for keyword in job_keywords
             )
-            and not lower.startswith(
-                "wir suchen"
-            )
+            and not lower.startswith("wir suchen")
         ):
             return cleaned
 
@@ -848,7 +866,36 @@ def extract_requirements(job_ad):
         "freue dich",
     )
 
+    section_headings = {
+        "anforderungen",
+        "voraussetzungen",
+        "ihr profil",
+        "dein profil",
+        "was sie mitbringen",
+        "was du mitbringst",
+        "qualifikationen",
+        "fachliche anforderungen",
+    }
+    stop_headings = {
+        "wir bieten",
+        "benefits",
+        "vorteile",
+        "unser angebot",
+        "ihre aufgaben",
+        "deine aufgaben",
+        "aufgaben",
+        "tätigkeiten",
+        "taetigkeiten",
+        "über uns",
+        "ueber uns",
+        "bewerbung",
+        "bewerben sie sich",
+        "kontakt",
+    }
+
     extracted = []
+    in_requirement_section = False
+    saw_structured_section = False
 
     lines = job_ad.replace(
         "\r",
@@ -871,14 +918,44 @@ def extract_requirements(job_ad):
         if len(line) < 3:
             continue
 
-        lower = line.lower().rstrip(":")
+        lower = line.lower().rstrip(": ")
+        normalized_lower = normalize(lower)
+
+        if normalized_lower in {normalize(item) for item in section_headings}:
+            in_requirement_section = True
+            saw_structured_section = True
+            continue
+
+        if normalized_lower in {normalize(item) for item in stop_headings}:
+            in_requirement_section = False
+            continue
+
+        # Heading-like lines such as "Wir bieten:" may contain trailing text.
+        if any(normalized_lower.startswith(normalize(heading) + " ") for heading in stop_headings):
+            in_requirement_section = False
+            continue
 
         # Überschriften und Werbesätze ausschließen
         if any(
-            lower == phrase
-            or lower.startswith(phrase)
+            normalized_lower == normalize(phrase)
+            or normalized_lower.startswith(normalize(phrase) + " ")
             for phrase in ignored_starts
         ):
+            continue
+
+        if any(
+            normalized_lower.startswith(normalize(phrase) + " ")
+            for phrase in stop_headings
+        ):
+            in_requirement_section = False
+            continue
+
+        # Einleitung, Unternehmenswerbung und reine Rollenbeschreibung sind
+        # keine Anforderungen, selbst wenn sie "Erfahrung" erwähnen.
+        if normalized_lower.startswith((
+            "wir suchen ", "unser unternehmen", "wir sind ",
+            "freuen sie sich ", "bei uns erwartet ",
+        )):
             continue
 
         # Aufgaben nicht automatisch als Anforderungen behandeln
@@ -902,7 +979,7 @@ def extract_requirements(job_ad):
         if any(
             keyword in lower
             for keyword in requirement_keywords
-        ):
+        ) and (in_requirement_section or not saw_structured_section):
             extracted.append(line)
 
     unique = []
@@ -1176,15 +1253,12 @@ def index():
                     form_data["job_ad"]
                 )
 
-            # Anforderungen erkennen
-            if (
-                not form_data["requirements"]
-                and form_data["job_ad"]
-            ):
-
-                form_data[
-                    "requirements"
-                ] = extract_requirements(
+            # Eine vollständige Anzeige ist die Quelle der Wahrheit. So können
+            # alte Anforderungen aus einem vorherigen Formularlauf nicht in eine
+            # neue Anzeige hineinbluten. Manuelle Anforderungen bleiben möglich,
+            # wenn keine vollständige Anzeige eingefügt wurde.
+            if form_data["job_ad"]:
+                form_data["requirements"] = extract_requirements(
                     form_data["job_ad"]
                 )
 
