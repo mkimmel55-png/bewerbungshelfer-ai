@@ -99,7 +99,18 @@ Vergleich zwischen Stellenanforderungen und vorhandenen Qualifikationen.
 ### v0.3.0
 
 Weboberfläche für die Bedienung im Browser.
+### v0.4.0
 
+Verbesserte Weboberfläche und komfortablere Bedienung.
+
+Neu:
+
+- Eingaben bleiben nach der Analyse im Formular erhalten
+- verständlichere Fehlermeldungen bei fehlenden Angaben
+- passende Anforderungen werden getrennt angezeigt
+- fehlende Anforderungen werden getrennt angezeigt
+- mobilfreundlicheres Layout
+- Anschreiben kann als TXT-Datei heruntergeladen werden
 ## Geplante Funktionen
 
 - intelligentere Vergleichslogik
