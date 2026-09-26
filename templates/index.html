@@ -212,7 +212,12 @@
             </button>
 
         </form>
-
+                 {% if match_rate is not none %}
+        <div class="result-box">
+            <h2>Trefferquote</h2>
+            <p><strong>{{ match_rate }} %</strong></p>
+        </div>
+        {% endif %}
         {% if matched or missing %}
         <div class="results-grid">
 
