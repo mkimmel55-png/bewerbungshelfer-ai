@@ -16,37 +16,41 @@ Ein kleines Open-Source-Projekt, das Bewerberinnen und Bewerbern dabei hilft, St
 
 ## Ziel
 
-Das Projekt soll besonders Quereinsteigern und Menschen mit wenig Erfahrung im Schreiben von Bewerbungen helfen, ihre Informationen übersichtlich zu strukturieren.
-
-Die Anwendung soll keine Qualifikationen erfinden und ersetzt keine persönliche Prüfung der Bewerbung.
+Das Projekt soll besonders Quereinsteigern und Menschen mit wenig Erfahrung im Schreiben von Bewerbungen helfen, ihre Informationen übersichtlich zu strukturieren. Die Anwendung soll keine Qualifikationen erfinden und ersetzt keine persönliche Prüfung der Bewerbung.
 
 ## Schnellstart
 
-Voraussetzung: Python 3.10 oder neuer.
+Voraussetzung: Python 3.10 oder neuer. Für die Kommandozeilen-Version:
 
-Für die Kommandozeilen-Version:
+```bash
+python app.py
+```
 
-    python app.py
-
-## Weboberfläche starten
+### Weboberfläche starten
 
 Ab Version 0.3.0 kann Bewerbungshelfer AI auch im Browser verwendet werden.
 
-### Installation
+## Installation
 
 Zuerst die benötigten Abhängigkeiten installieren:
 
-    pip install -r requirements.txt
+```bash
+pip install -r requirements.txt
+```
 
 ### Start
 
 Danach die Webanwendung starten:
 
-    python web_app.py
+```bash
+python web_app.py
+```
 
 Anschließend im Browser öffnen:
 
-    http://127.0.0.1:5000
+```text
+http://127.0.0.1:5000
+```
 
 ## Funktionen der Weboberfläche
 
@@ -61,30 +65,26 @@ Anschließend im Browser öffnen:
 
 ## Vergleichslogik
 
-Die aktuelle Version verwendet eine einfache textbasierte Vergleichslogik.
-
-Eine Anforderung gilt als passend, wenn sie textlich mit einer vorhandenen Qualifikation übereinstimmt oder darin enthalten ist.
+Die aktuelle Version verwendet eine einfache textbasierte Vergleichslogik. Eine Anforderung gilt als passend, wenn sie textlich mit einer vorhandenen Qualifikation übereinstimmt oder darin enthalten ist.
 
 ## Datenschutz
 
-Die aktuelle Basisversion läuft lokal.
-
-Persönliche Eingaben werden nicht automatisch an externe Dienste gesendet.
-
-Die Weboberfläche verwendet in der aktuellen Version keinen externen KI-Dienst.
+Die aktuelle Basisversion läuft lokal. Persönliche Eingaben werden nicht automatisch an externe Dienste gesendet. Die Weboberfläche verwendet in der aktuellen Version keinen externen KI-Dienst.
 
 ## Projektstruktur
 
-    bewerbungshelfer-ai
-    ├── .gitignore
-    ├── CONTRIBUTING.md
-    ├── LICENSE
-    ├── README.md
-    ├── app.py
-    ├── requirements.txt
-    ├── web_app.py
-    └── templates
-        └── index.html
+```text
+bewerbungshelfer-ai
+├── .gitignore
+├── CONTRIBUTING.md
+├── LICENSE
+├── README.md
+├── app.py
+├── requirements.txt
+├── web_app.py
+└── templates
+    └── index.html
+```
 
 ## Versionen
 
@@ -99,12 +99,10 @@ Vergleich zwischen Stellenanforderungen und vorhandenen Qualifikationen.
 ### v0.3.0
 
 Weboberfläche für die Bedienung im Browser.
-### v0.4.0
+
 ### v0.4.0
 
-Verbesserte Weboberfläche und komfortablere Bedienung.
-
-Neu:
+Verbesserte Weboberfläche und komfortablere Bedienung. Neu:
 
 - Eingaben bleiben nach der Analyse im Formular erhalten
 - verständlichere Fehlermeldungen bei fehlenden Angaben
@@ -115,9 +113,7 @@ Neu:
 
 ### v0.5.0
 
-Verbesserte Vergleichslogik und Trefferquote.
-
-Neu:
+Verbesserte Vergleichslogik und Trefferquote. Neu:
 
 - flexiblerer Vergleich von Anforderungen und Qualifikationen
 - Vergleich anhand gemeinsamer Wörter
@@ -125,7 +121,18 @@ Neu:
 - Berechnung einer Trefferquote in Prozent
 - Anzeige der Trefferquote in der Weboberfläche
 - passende und fehlende Anforderungen bleiben getrennt sichtbar
- ## Geplante Funktionen
+
+### v0.5.1
+
+Fehlerbehebung und Dokumentationspflege. Neu:
+
+- Einrückungsfehler bei der Berechnung der Trefferquote behoben
+- doppelten Aufruf zur Erstellung des Anschreibens entfernt
+- Versionsangabe der Weboberfläche aktualisiert
+- doppelte Dokumentation zu v0.4.0 bereinigt
+
+## Geplante Funktionen
+
 - deutsche und englische Ausgabe
 - PDF-Ausgabe für Anschreiben
 - DOCX-Export
@@ -135,12 +142,8 @@ Neu:
 
 ## Mitmachen
 
-Fehlerberichte, Verbesserungsvorschläge und Pull Requests sind willkommen.
-
-Siehe CONTRIBUTING.md.
+Fehlerberichte, Verbesserungsvorschläge und Pull Requests sind willkommen. Siehe CONTRIBUTING.md.
 
 ## Lizenz
 
-Dieses Projekt steht unter der MIT License.
-
-Siehe LICENSE.
+Dieses Projekt steht unter der MIT License. Siehe LICENSE.
