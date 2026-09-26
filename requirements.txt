@@ -1,1 +1,1 @@
-# Die aktuelle Basisversion verwendet nur die Python-Standardbibliothek.
+Flask>=3.0,<4.0
