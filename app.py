@@ -1,10 +1,50 @@
 """
 Bewerbungshelfer AI
-Version 0.5.0
+Version 0.6
 """
 
 import re
 from textwrap import fill
+
+
+# Wörter, die für den Vergleich wenig Aussagekraft haben
+STOP_WORDS = {
+    "der",
+    "die",
+    "das",
+    "den",
+    "dem",
+    "des",
+    "ein",
+    "eine",
+    "einer",
+    "einem",
+    "einen",
+    "und",
+    "oder",
+    "mit",
+    "für",
+    "von",
+    "im",
+    "in",
+    "am",
+    "an",
+    "als",
+    "auf",
+    "zu",
+    "zur",
+    "zum",
+    "bei",
+    "sowie",
+    "sie",
+    "ihr",
+    "ihre",
+    "ihren",
+    "dein",
+    "deine",
+    "wir",
+    "suchen",
+}
 
 
 def ask(label: str) -> str:
@@ -13,32 +53,95 @@ def ask(label: str) -> str:
 
 def split_items(text: str) -> list[str]:
     """
-    Trennt Eingaben an Kommas oder Semikolons
-    und entfernt leere Einträge.
+    Trennt Eingaben an:
+    - Zeilenumbrüchen
+    - Kommas
+    - Semikolons
+    - Aufzählungszeichen
+
+    Entfernt außerdem typische Überschriften.
     """
-    text = text.replace(";", ",")
-    return [
-        item.strip()
-        for item in text.split(",")
-        if item.strip()
-    ]
+    if not text:
+        return []
+
+    text = text.replace("\r", "\n")
+
+    raw_items = re.split(
+        r"[\n,;]+",
+        text,
+    )
+
+    ignored_headings = {
+        "ihr profil",
+        "dein profil",
+        "profil",
+        "anforderungen",
+        "voraussetzungen",
+        "was sie mitbringen",
+        "was du mitbringst",
+    }
+
+    items = []
+
+    for item in raw_items:
+        item = re.sub(
+            r"^[\s\-\*\u2022✓✔►▪]+",
+            "",
+            item,
+        ).strip()
+
+        item = item.rstrip(":").strip()
+
+        if not item:
+            continue
+
+        if item.lower() in ignored_headings:
+            continue
+
+        if item not in items:
+            items.append(item)
+
+    return items
 
 
 def normalize(text: str) -> str:
-    return text.lower().strip()
+    """
+    Vereinheitlicht Texte für den Vergleich.
+    """
+    text = text.lower().strip()
+
+    replacements = {
+        "lkw fahrer": "lkw-fahrer",
+        "lkw-fahrerin": "lkw-fahrer",
+        "kraftfahrer": "lkw-fahrer",
+        "kraftfahrerin": "lkw-fahrer",
+        "führerschein klasse ce": "führerschein ce",
+        "führerschein der klasse ce": "führerschein ce",
+        "führerschein kl. ce": "führerschein ce",
+    }
+
+    for old, new in replacements.items():
+        text = text.replace(old, new)
+
+    return text
 
 
 def word_set(text: str) -> set[str]:
     """
-    Zerlegt Text in einzelne Wörter.
-    Zahlen und deutsche Umlaute bleiben erhalten.
+    Zerlegt Text in aussagekräftige Wörter.
+    Unwichtige Standardwörter werden entfernt.
     """
-    return set(
-        re.findall(
-            r"[a-zA-ZäöüÄÖÜß0-9]+",
-            normalize(text),
-        )
+    words = re.findall(
+        r"[a-zA-ZäöüÄÖÜß0-9\-]+",
+        normalize(text),
     )
+
+    return {
+        word
+        for word in words
+        if word not in STOP_WORDS
+        and len(word) > 1
+    }
 
 
 def requirement_matches(
@@ -46,10 +149,11 @@ def requirement_matches(
     qualification: str,
 ) -> bool:
     """
-    Prüft, ob eine Anforderung zu einer Qualifikation passt.
+    Prüft, ob eine konkrete Anforderung durch eine
+    vorhandene Qualifikation abgedeckt wird.
 
-    Zuerst wird auf direkte Textübereinstimmung geprüft.
-    Danach werden gemeinsame Wörter verglichen.
+    Der Vergleich ist bewusst konservativer als vorher,
+    damit nicht zu schnell ein Treffer entsteht.
     """
 
     req = normalize(requirement)
@@ -58,8 +162,15 @@ def requirement_matches(
     if not req or not qual:
         return False
 
-    # Direkter Treffer
-    if req in qual or qual in req:
+    # Exakte Übereinstimmung
+    if req == qual:
+        return True
+
+    # Sinnvolle direkte Teilübereinstimmung
+    if len(req) >= 6 and req in qual:
+        return True
+
+    if len(qual) >= 6 and qual in req:
         return True
 
     req_words = word_set(req)
@@ -70,10 +181,21 @@ def requirement_matches(
 
     common_words = req_words & qual_words
 
-    # Anteil gemeinsamer Wörter bezogen auf die Anforderung
+    if not common_words:
+        return False
+
+    # Kurze Anforderungen müssen sehr genau passen
+    if len(req_words) == 1:
+        return len(common_words) == 1
+
+    if len(req_words) == 2:
+        return len(common_words) == 2
+
+    # Bei längeren Anforderungen müssen mindestens
+    # 60 % der aussagekräftigen Wörter übereinstimmen.
     score = len(common_words) / len(req_words)
 
-    return score >= 0.5
+    return score >= 0.60
 
 
 def compare_requirements(
@@ -81,15 +203,14 @@ def compare_requirements(
     qualifications: list[str],
 ) -> tuple[list[str], list[str]]:
     """
-    Vergleicht Anforderungen flexibler mit vorhandenen
-    Qualifikationen.
+    Vergleicht jede Anforderung einzeln mit den
+    vorhandenen Qualifikationen.
     """
 
     matched = []
     missing = []
 
     for requirement in requirements:
-
         found = any(
             requirement_matches(
                 requirement,
@@ -111,14 +232,17 @@ def calculate_match_rate(
     matched: list[str],
 ) -> int:
     """
-    Berechnet die Trefferquote in Prozent.
+    Berechnet die Trefferquote anhand einzelner
+    Anforderungen.
     """
 
     if not requirements:
         return 0
 
     return round(
-        len(matched) / len(requirements) * 100
+        len(matched)
+        / len(requirements)
+        * 100
     )
 
 
@@ -129,6 +253,9 @@ def build_summary(
     matched: list[str],
     missing: list[str],
 ) -> str:
+    """
+    Erstellt eine übersichtliche Zusammenfassung.
+    """
 
     match_rate = calculate_match_rate(
         requirements,
@@ -195,6 +322,27 @@ def build_summary(
     return "\n".join(lines)
 
 
+def clean_sentence(text: str) -> str:
+    """
+    Bereinigt Texte für das Anschreiben.
+    """
+    text = text.strip()
+
+    if not text:
+        return ""
+
+    text = re.sub(
+        r"\s+",
+        " ",
+        text,
+    )
+
+    if text[-1] not in ".!?":
+        text += "."
+
+    return text
+
+
 def build_letter(
     role: str,
     experience: str,
@@ -202,57 +350,96 @@ def build_letter(
     focus: str,
     matched: list[str],
 ) -> str:
+    """
+    Erstellt ein natürlicheres Anschreiben.
 
-    strengths = []
+    Anforderungen der Stellenanzeige werden nicht einfach
+    vollständig in das Anschreiben kopiert.
+    """
+
+    paragraphs = [
+        "Sehr geehrte Damen und Herren,",
+        "",
+        (
+            f"mit Interesse bewerbe ich mich auf die Position "
+            f"als {role}. Aufgrund meiner bisherigen "
+            f"Berufserfahrung und meiner vorhandenen "
+            f"Qualifikationen sehe ich eine gute fachliche "
+            f"Übereinstimmung mit der ausgeschriebenen Stelle."
+        ),
+    ]
 
     if experience:
-        strengths.append(experience)
+        paragraphs.extend([
+            "",
+            clean_sentence(experience),
+        ])
 
     if qualifications:
-        strengths.extend(qualifications)
+        qualification_text = ", ".join(
+            qualifications[:6]
+        )
+
+        paragraphs.extend([
+            "",
+            (
+                "Zu meinen vorhandenen Qualifikationen "
+                f"und Kenntnissen zählen {qualification_text}."
+            ),
+        ])
 
     if focus:
-        strengths.append(focus)
-
-    strengths_text = ", ".join(strengths)
-
-    if not strengths_text:
-        strengths_text = (
-            "meine bisherige Berufserfahrung "
-            "und meine Motivation"
-        )
-
-    matched_text = ""
+        paragraphs.extend([
+            "",
+            (
+                "Besonders hervorheben möchte ich "
+                + clean_sentence(focus).lower()
+            ),
+        ])
 
     if matched:
-        matched_text = (
-            " Besonders passend zu den Anforderungen sind "
-            + ", ".join(matched)
-            + "."
+        selected_matches = matched[:3]
+
+        matched_text = ", ".join(
+            selected_matches
         )
 
-    text = (
-        "Sehr geehrte Damen und Herren,\n\n"
-        f"hiermit bewerbe ich mich auf die Position als {role}. "
-        f"Für die Stelle bringe ich insbesondere "
-        f"{strengths_text} mit."
-        f"{matched_text} "
-        "Gern erläutere ich Ihnen in einem persönlichen Gespräch, "
-        "wie ich meine Erfahrung in Ihrem Unternehmen "
-        "einbringen kann.\n\n"
-        "Mit freundlichen Grüßen"
-    )
+        paragraphs.extend([
+            "",
+            (
+                "Damit erfülle ich insbesondere Anforderungen "
+                f"wie {matched_text}."
+            ),
+        ])
 
-    return "\n".join(
-        fill(paragraph, width=88)
-        if paragraph
-        else ""
-        for paragraph in text.split("\n")
-    )
+    paragraphs.extend([
+        "",
+        (
+            "Gern überzeuge ich Sie in einem persönlichen Gespräch "
+            "von meiner Erfahrung und Motivation. "
+            "Über die Einladung zu einem Kennenlernen freue ich mich."
+        ),
+        "",
+        "Mit freundlichen Grüßen",
+    ])
+
+    formatted = []
+
+    for paragraph in paragraphs:
+        if not paragraph:
+            formatted.append("")
+        else:
+            formatted.append(
+                fill(
+                    paragraph,
+                    width=88,
+                )
+            )
+
+    return "\n".join(formatted)
 
 
 def main() -> None:
-
     print("Bewerbungshelfer AI")
     print("===================")
 
@@ -266,8 +453,7 @@ def main() -> None:
     )
 
     requirements_input = ask(
-        "Anforderungen der Stelle "
-        "(mit Komma trennen)"
+        "Anforderungen der Stelle"
     )
 
     experience = ask(
@@ -275,8 +461,7 @@ def main() -> None:
     )
 
     qualifications_input = ask(
-        "Deine Qualifikationen "
-        "(mit Komma trennen)"
+        "Deine Qualifikationen"
     )
 
     focus = ask(
