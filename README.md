@@ -100,6 +100,7 @@ Vergleich zwischen Stellenanforderungen und vorhandenen Qualifikationen.
 
 Weboberfläche für die Bedienung im Browser.
 ### v0.4.0
+### v0.4.0
 
 Verbesserte Weboberfläche und komfortablere Bedienung.
 
@@ -111,13 +112,24 @@ Neu:
 - fehlende Anforderungen werden getrennt angezeigt
 - mobilfreundlicheres Layout
 - Anschreiben kann als TXT-Datei heruntergeladen werden
-## Geplante Funktionen
 
-- intelligentere Vergleichslogik
+### v0.5.0
+
+Verbesserte Vergleichslogik und Trefferquote.
+
+Neu:
+
+- flexiblerer Vergleich von Anforderungen und Qualifikationen
+- Vergleich anhand gemeinsamer Wörter
+- weiterhin keine erfundenen Qualifikationen
+- Berechnung einer Trefferquote in Prozent
+- Anzeige der Trefferquote in der Weboberfläche
+- passende und fehlende Anforderungen bleiben getrennt sichtbar
+ ## Geplante Funktionen
 - deutsche und englische Ausgabe
-- Export von Anschreiben
-- PDF-Ausgabe
-- bessere Weboberfläche
+- PDF-Ausgabe für Anschreiben
+- DOCX-Export
+- weitere Verbesserungen der Weboberfläche
 - optionale KI-Unterstützung
 - Tests für die Vergleichsfunktionen
 
