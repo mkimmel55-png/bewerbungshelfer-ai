@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bewerbungshelfer AI</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 0 20px;
+            background: #f4f4f4;
+            color: #222;
+        }
+
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        }
+
+        h1 {
+            margin-top: 0;
+        }
+
+        label {
+            display: block;
+            margin-top: 18px;
+            font-weight: bold;
+        }
+
+        input,
+        textarea {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 12px;
+            margin-top: 6px;
+            border: 1px solid #bbb;
+            border-radius: 6px;
+            font-size: 16px;
+        }
+
+        textarea {
+            min-height: 110px;
+            resize: vertical;
+        }
+
+        button {
+            margin-top: 24px;
+            padding: 12px 22px;
+            border: 0;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .result {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f7f7f7;
+            border-radius: 8px;
+        }
+
+        pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-family: Arial, sans-serif;
+        }
+
+        .notice {
+            margin-bottom: 20px;
+            padding: 12px;
+            background: #fff3cd;
+            border-radius: 6px;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>Bewerbungshelfer AI</h1>
+
+    <div class="notice">
+        Bitte nur echte Berufserfahrung und Qualifikationen eingeben.
+        Die Anwendung erfindet keine Qualifikationen.
+    </div>
+
+    <form method="post">
+
+        <label for="role">Stellenbezeichnung</label>
+        <input
+            type="text"
+            id="role"
+            name="role"
+            required
+        >
+
+        <label for="requirements">
+            Anforderungen der Stellenanzeige
+        </label>
+        <textarea
+            id="requirements"
+            name="requirements"
+            placeholder="Zum Beispiel: Führerschein CE, Berufserfahrung, Deutschkenntnisse"
+        ></textarea>
+
+        <label for="experience">
+            Passende Berufserfahrung
+        </label>
+        <textarea
+            id="experience"
+            name="experience"
+        ></textarea>
+
+        <label for="qualifications">
+            Vorhandene Qualifikationen
+        </label>
+        <textarea
+            id="qualifications"
+            name="qualifications"
+            placeholder="Mehrere Angaben mit Komma trennen"
+        ></textarea>
+
+        <label for="focus">
+            Was soll besonders hervorgehoben werden?
+        </label>
+        <textarea
+            id="focus"
+            name="focus"
+        ></textarea>
+
+        <button type="submit">
+            Bewerbung analysieren
+        </button>
+
+    </form>
+
+    {% if result %}
+    <div class="result">
+
+        <h2>Vergleich</h2>
+
+        <pre>{{ result }}</pre>
+
+    </div>
+    {% endif %}
+
+    {% if letter %}
+    <div class="result">
+
+        <h2>Anschreiben-Entwurf</h2>
+
+        <pre>{{ letter }}</pre>
+
+    </div>
+    {% endif %}
+
+</div>
+
+</body>
+</html>
