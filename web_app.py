@@ -1,6 +1,6 @@
 """
 Bewerbungshelfer AI
-Weboberfläche für Version 0.5.0
+Weboberfläche für Version 0.5.1
 """
 
 from io import BytesIO
@@ -76,7 +76,7 @@ def index():
                 requirements,
                 qualifications,
             )
-             match_rate = calculate_match_rate(
+            match_rate = calculate_match_rate(
                 requirements,
                 matched,
             )
@@ -87,14 +87,6 @@ def index():
                 qualifications,
                 matched,
                 missing,
-            )
-
-            letter = build_letter(
-                form_data["role"],
-                form_data["experience"],
-                qualifications,
-                form_data["focus"],
-                matched,
             )
 
             letter = build_letter(
