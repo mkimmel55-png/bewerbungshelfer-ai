@@ -7,8 +7,14 @@ import json
 import re
 from io import BytesIO
 from pathlib import Path
+from xml.sax.saxutils import escape
 
 from flask import Flask, render_template, request, send_file
+
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib.units import cm
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
 
 from app import (
     split_items,
@@ -83,8 +89,6 @@ def extract_role(job_ad):
     """
     Versucht aus einer Stellenanzeige eine Stellenbezeichnung
     zu erkennen.
-
-    Es wird bewusst nur eine vorsichtige Heuristik verwendet.
     """
     if not job_ad:
         return ""
@@ -115,8 +119,6 @@ def extract_requirements(job_ad):
     """
     Extrahiert wahrscheinliche Anforderungen aus einer
     kompletten Stellenanzeige.
-
-    Die Funktion erfindet keine Qualifikationen.
     """
     if not job_ad:
         return ""
@@ -176,8 +178,6 @@ def extract_requirements(job_ad):
         ):
             extracted.append(line)
 
-    # Falls keine klaren Anforderungen erkannt wurden,
-    # werden sinnvolle kurze Zeilen verwendet.
     if not extracted:
         for raw_line in lines:
             line = raw_line.strip()
@@ -191,7 +191,6 @@ def extract_requirements(job_ad):
             if 10 <= len(line) <= 180:
                 extracted.append(line)
 
-    # Duplikate entfernen, Reihenfolge erhalten
     unique = []
 
     for item in extracted:
@@ -260,7 +259,6 @@ def index():
             "",
         ).strip()
 
-        # Profil speichern
         if action == "save_profile":
             try:
                 save_profile(
@@ -280,8 +278,6 @@ def index():
                 )
 
         else:
-            # Stellenbezeichnung vorsichtig aus
-            # Stellenanzeige übernehmen
             if (
                 not form_data["role"]
                 and form_data["job_ad"]
@@ -290,8 +286,6 @@ def index():
                     form_data["job_ad"]
                 )
 
-            # Anforderungen automatisch aus kompletter
-            # Stellenanzeige extrahieren
             if (
                 not form_data["requirements"]
                 and form_data["job_ad"]
@@ -347,8 +341,6 @@ def index():
                     missing,
                 )
 
-                # Anschreiben erst erzeugen,
-                # wenn der Benutzer es ausdrücklich auswählt.
                 if action == "generate_letter":
                     letter = build_letter(
                         form_data["role"],
@@ -390,6 +382,76 @@ def download_letter():
         as_attachment=True,
         download_name="anschreiben.txt",
         mimetype="text/plain; charset=utf-8",
+    )
+
+
+@app.route("/download-letter-pdf")
+def download_letter_pdf():
+    if not last_letter:
+        return (
+            "Noch kein Anschreiben vorhanden.",
+            400,
+        )
+
+    pdf_data = BytesIO()
+
+    document = SimpleDocTemplate(
+        pdf_data,
+        pagesize=A4,
+        rightMargin=2.2 * cm,
+        leftMargin=2.2 * cm,
+        topMargin=2.2 * cm,
+        bottomMargin=2.2 * cm,
+        title="Bewerbungsanschreiben",
+    )
+
+    styles = getSampleStyleSheet()
+
+    story = []
+
+    story.append(
+        Paragraph(
+            "Bewerbungsanschreiben",
+            styles["Title"],
+        )
+    )
+
+    story.append(
+        Spacer(
+            1,
+            0.5 * cm,
+        )
+    )
+
+    for paragraph in last_letter.split("\n"):
+        paragraph = paragraph.strip()
+
+        if paragraph:
+            safe_text = escape(paragraph)
+
+            story.append(
+                Paragraph(
+                    safe_text,
+                    styles["BodyText"],
+                )
+            )
+
+            story.append(
+                Spacer(
+                    1,
+                    0.25 * cm,
+                )
+            )
+
+    document.build(story)
+
+    pdf_data.seek(0)
+
+    return send_file(
+        pdf_data,
+        as_attachment=True,
+        download_name="Anschreiben.pdf",
+        mimetype="application/pdf",
     )
 
 
