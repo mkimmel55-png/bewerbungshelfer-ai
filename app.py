@@ -1,8 +1,9 @@
 """
 Bewerbungshelfer AI
-Version 0.2.0
+Version 0.5.0
 """
 
+import re
 from textwrap import fill
 
 
@@ -27,33 +28,74 @@ def normalize(text: str) -> str:
     return text.lower().strip()
 
 
+def word_set(text: str) -> set[str]:
+    """
+    Zerlegt Text in einzelne Wörter.
+    Zahlen und deutsche Umlaute bleiben erhalten.
+    """
+    return set(
+        re.findall(
+            r"[a-zA-ZäöüÄÖÜß0-9]+",
+            normalize(text),
+        )
+    )
+
+
+def requirement_matches(
+    requirement: str,
+    qualification: str,
+) -> bool:
+    """
+    Prüft, ob eine Anforderung zu einer Qualifikation passt.
+
+    Zuerst wird auf direkte Textübereinstimmung geprüft.
+    Danach werden gemeinsame Wörter verglichen.
+    """
+
+    req = normalize(requirement)
+    qual = normalize(qualification)
+
+    if not req or not qual:
+        return False
+
+    # Direkter Treffer
+    if req in qual or qual in req:
+        return True
+
+    req_words = word_set(req)
+    qual_words = word_set(qual)
+
+    if not req_words or not qual_words:
+        return False
+
+    common_words = req_words & qual_words
+
+    # Anteil gemeinsamer Wörter bezogen auf die Anforderung
+    score = len(common_words) / len(req_words)
+
+    return score >= 0.5
+
+
 def compare_requirements(
     requirements: list[str],
     qualifications: list[str],
 ) -> tuple[list[str], list[str]]:
     """
-    Vergleicht Anforderungen mit vorhandenen Qualifikationen.
-
-    Eine Anforderung gilt als passend, wenn sie als Text
-    in einer vorhandenen Qualifikation vorkommt
-    oder umgekehrt.
+    Vergleicht Anforderungen flexibler mit vorhandenen
+    Qualifikationen.
     """
 
     matched = []
     missing = []
 
-    normalized_qualifications = [
-        normalize(item)
-        for item in qualifications
-    ]
-
     for requirement in requirements:
-        req_normalized = normalize(requirement)
 
         found = any(
-            req_normalized in qualification
-            or qualification in req_normalized
-            for qualification in normalized_qualifications
+            requirement_matches(
+                requirement,
+                qualification,
+            )
+            for qualification in qualifications
         )
 
         if found:
@@ -64,6 +106,22 @@ def compare_requirements(
     return matched, missing
 
 
+def calculate_match_rate(
+    requirements: list[str],
+    matched: list[str],
+) -> int:
+    """
+    Berechnet die Trefferquote in Prozent.
+    """
+
+    if not requirements:
+        return 0
+
+    return round(
+        len(matched) / len(requirements) * 100
+    )
+
+
 def build_summary(
     role: str,
     requirements: list[str],
@@ -72,8 +130,15 @@ def build_summary(
     missing: list[str],
 ) -> str:
 
+    match_rate = calculate_match_rate(
+        requirements,
+        matched,
+    )
+
     lines = [
         f"Zielstelle: {role}",
+        "",
+        f"Trefferquote: {match_rate} %",
         "",
         "Anforderungen:",
     ]
@@ -110,7 +175,9 @@ def build_summary(
             for item in matched
         )
     else:
-        lines.append("- keine eindeutigen Treffer")
+        lines.append(
+            "- keine eindeutigen Treffer"
+        )
 
     lines.extend([
         "",
@@ -167,10 +234,12 @@ def build_letter(
     text = (
         "Sehr geehrte Damen und Herren,\n\n"
         f"hiermit bewerbe ich mich auf die Position als {role}. "
-        f"Für die Stelle bringe ich insbesondere {strengths_text} mit."
+        f"Für die Stelle bringe ich insbesondere "
+        f"{strengths_text} mit."
         f"{matched_text} "
         "Gern erläutere ich Ihnen in einem persönlichen Gespräch, "
-        "wie ich meine Erfahrung in Ihrem Unternehmen einbringen kann.\n\n"
+        "wie ich meine Erfahrung in Ihrem Unternehmen "
+        "einbringen kann.\n\n"
         "Mit freundlichen Grüßen"
     )
 
