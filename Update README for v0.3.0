@@ -28,3 +28,11 @@ Für die Kommandozeilen-Version:
 
 ```bash
 python app.py
+///
+
+
+4. Danach eine Leerzeile.
+5. Dann den restlichen README-Text einfügen, beginnend mit:
+
+```text
+## Weboberfläche starten
