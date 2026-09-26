@@ -1,11 +1,10 @@
 """
 Bewerbungshelfer AI
-Weboberfläche Version 0.7.0
+Weboberfläche Version 0.7.1
 """
 
 import json
 import re
-from difflib import SequenceMatcher
 from io import BytesIO
 from pathlib import Path
 from xml.sax.saxutils import escape
@@ -25,13 +24,13 @@ PROFILE_FILE = Path("applicant_profile.json")
 last_letter = ""
 
 
-# ---------------------------------------------------------
-# Hilfsfunktionen
-# ---------------------------------------------------------
+# =========================================================
+# Text-Hilfsfunktionen
+# =========================================================
 
 def normalize(text):
     """
-    Vereinheitlicht Texte für den Vergleich.
+    Vereinheitlicht Text für sichere Vergleiche.
     """
     if not text:
         return ""
@@ -52,6 +51,8 @@ def normalize(text):
         ";": " ",
         "(": " ",
         ")": " ",
+        "[": " ",
+        "]": " ",
     }
 
     for old, new in replacements.items():
@@ -64,10 +65,8 @@ def normalize(text):
 
 def split_items(text):
     """
-    Trennt Anforderungen und Qualifikationen.
-
-    Unterstützt:
-    - Zeilenumbrüche
+    Trennt Texte an:
+    - Zeilenumbrüchen
     - Kommas
     - Semikolons
     - Aufzählungszeichen
@@ -93,304 +92,535 @@ def split_items(text):
     return result
 
 
-# ---------------------------------------------------------
-# Synonyme
-# ---------------------------------------------------------
+# =========================================================
+# Synonyme / Fachbegriffe
+# =========================================================
 
-SYNONYM_GROUPS = [
-    {
+CONCEPT_GROUPS = {
+
+    "license_ce": {
         "ce",
         "klasse ce",
         "fuehrerschein ce",
         "fuehrerscheinklasse ce",
-        "lkw fuehrerschein",
         "lkw fuehrerschein ce",
     },
-    {
-        "c",
+
+    "license_c": {
         "klasse c",
         "fuehrerschein c",
         "fuehrerscheinklasse c",
     },
-    {
+
+    "driver_card": {
         "fahrerkarte",
         "digitale fahrerkarte",
         "gueltige fahrerkarte",
     },
-    {
-        "95",
+
+    # Deutschland
+    "module_95_de": {
         "modul 95",
         "module 95",
         "schluesselzahl 95",
-        "berufskraftfahrerqualifikation",
         "fahrerqualifizierungsnachweis",
+        "berufskraftfahrerqualifikation",
         "bkrfqg",
     },
-    {
+
+    # Schweiz bewusst getrennt
+    "czv_ch": {
         "czv",
         "chauffeurzulassungsverordnung",
         "chauffeur zulassungsverordnung",
     },
-    {
+
+    "load_security": {
         "ladungssicherung",
         "ladung sichern",
         "ladungsicherung",
     },
-    {
+
+    "experience": {
         "berufserfahrung",
-        "erfahrung",
-        "mehrjaehrige erfahrung",
-        "mehrjährige erfahrung",
         "fahrerfahrung",
+        "mehrjaehrige berufserfahrung",
+        "mehrjaehrige erfahrung",
         "berufspraxis",
     },
-    {
+
+    "truck_driver": {
         "lkw fahrer",
         "lkw fahrerin",
         "berufskraftfahrer",
         "berufskraftfahrerin",
         "chauffeur",
-        "chauffeuse",
         "truck driver",
     },
-    {
+
+    "local_transport": {
         "nahverkehr",
         "regionalverkehr",
         "regionaler verkehr",
-        "tagestouren",
         "tagestour",
+        "tagestouren",
         "lokale touren",
         "lokalverkehr",
     },
-    {
+
+    "night_work": {
+        "nachttour",
         "nachttouren",
+        "nachtfahrt",
         "nachtfahrten",
         "nachtschicht",
         "nachtarbeit",
-        "nachtverkehr",
     },
-    {
+
+    "delivery": {
+        "auslieferung",
+        "zustellung",
+        "warenzustellung",
+        "lieferung",
+        "distribution",
+    },
+
+    "german": {
         "deutsch",
         "deutschkenntnisse",
-        "deutsche sprache",
         "gute deutschkenntnisse",
+        "deutsche sprache",
     },
-    {
+
+    "english": {
         "englisch",
         "englischkenntnisse",
         "englische sprache",
     },
-    {
+
+    "reliable": {
         "zuverlaessig",
-        "zuverlässig",
         "zuverlaessigkeit",
-        "zuverlässigkeit",
     },
-    {
+
+    "independent": {
+        "selbststaendig",
+        "eigenstaendig",
+        "selbstaendige arbeitsweise",
+        "selbststaendige arbeitsweise",
+    },
+
+    "teamwork": {
         "teamfaehig",
-        "teamfähig",
         "teamarbeit",
         "teamplayer",
     },
-    {
-        "selbststaendig",
-        "selbstständig",
-        "selbststaendige arbeitsweise",
-        "eigenstaendig",
-        "eigenständig",
-    },
-    {
-        "flexibel",
-        "flexibilitaet",
-        "flexibilität",
-    },
-    {
-        "pünktlich",
+
+    "punctual": {
         "puenktlich",
         "puenktlichkeit",
-        "pünktlichkeit",
     },
-    {
+
+    "responsible": {
+        "verantwortungsbewusst",
+        "verantwortungsbewusstsein",
+        "verantwortungsvoll",
+    },
+
+    "early_hours": {
+        "fruehe arbeitszeiten",
+        "fruehschicht",
+        "fruehe schicht",
+        "frueher arbeitsbeginn",
+    },
+
+    "flexible": {
+        "flexibel",
+        "flexibilitaet",
+    },
+
+    "customer_contact": {
         "kundenkontakt",
+        "kundenservice",
         "kundenorientierung",
         "kundenfreundlich",
-        "kundenservice",
     },
-    {
-        "auslieferung",
-        "lieferung",
-        "zustellung",
-        "warenzustellung",
-        "distribution",
-    },
-    {
-        "getraenke",
-        "getränke",
-        "getraenkelogistik",
-        "getränkelogistik",
-        "getraenkeauslieferung",
-        "getränkeauslieferung",
-    },
-]
+}
 
 
-def synonym_match(requirement, qualification):
+def contains_phrase(text, phrase):
     """
-    Prüft, ob zwei Begriffe über eine Synonymgruppe zusammengehören.
+    Prüft Begriffe möglichst sauber.
+    Sehr kurze Begriffe wie C oder CE werden
+    als einzelne Wörter geprüft.
     """
-    req = normalize(requirement)
-    qual = normalize(qualification)
+    text = normalize(text)
+    phrase = normalize(phrase)
 
-    for group in SYNONYM_GROUPS:
-        normalized_group = {
-            normalize(item)
-            for item in group
-        }
-
-        req_found = any(
-            item in req or req in item
-            for item in normalized_group
-        )
-
-        qual_found = any(
-            item in qual or qual in item
-            for item in normalized_group
-        )
-
-        if req_found and qual_found:
-            return True
-
-    return False
-
-
-def word_overlap_score(text1, text2):
-    """
-    Berechnet die Wortüberschneidung.
-    """
-    words1 = {
-        word
-        for word in normalize(text1).split()
-        if len(word) >= 2
-    }
-
-    words2 = {
-        word
-        for word in normalize(text2).split()
-        if len(word) >= 2
-    }
-
-    if not words1 or not words2:
-        return 0.0
-
-    common = words1 & words2
-
-    return len(common) / min(
-        len(words1),
-        len(words2),
-    )
-
-
-def requirement_matches(requirement, qualification):
-    """
-    Verbesserter Vergleich einer Anforderung
-    mit einer vorhandenen Qualifikation.
-    """
-    req = normalize(requirement)
-    qual = normalize(qualification)
-
-    if not req or not qual:
+    if not text or not phrase:
         return False
 
-    # Exakter Treffer
-    if req == qual:
-        return True
+    if len(phrase) <= 2:
+        pattern = rf"\b{re.escape(phrase)}\b"
+        return bool(re.search(pattern, text))
 
-    # Text ist Bestandteil des anderen
-    if req in qual or qual in req:
-        return True
+    return phrase in text
 
-    # Synonyme
-    if synonym_match(req, qual):
-        return True
 
-    # Wortüberschneidung
-    overlap = word_overlap_score(
-        req,
-        qual,
+def detect_concepts(text):
+    """
+    Erkennt bekannte Qualifikationen oder Eigenschaften
+    in einem Text.
+    """
+    detected = set()
+
+    normalized_text = normalize(text)
+
+    for concept, phrases in CONCEPT_GROUPS.items():
+
+        for phrase in phrases:
+
+            if contains_phrase(
+                normalized_text,
+                phrase,
+            ):
+                detected.add(concept)
+                break
+
+    return detected
+
+
+# =========================================================
+# Anforderungen analysieren
+# =========================================================
+
+def requirement_concepts(requirement):
+    """
+    Bestimmt, welche konkreten Konzepte eine
+    Stellenanforderung verlangt.
+    """
+    text = normalize(requirement)
+
+    concepts = set()
+
+    # Führerschein C / CE
+    if (
+        re.search(r"\bce\b", text)
+        or "klasse c ce" in text
+        or "fuehrerschein c ce" in text
+    ):
+        concepts.add("license_ce")
+
+    elif (
+        re.search(r"\bklasse c\b", text)
+        or "fuehrerschein c" in text
+    ):
+        concepts.add("license_c")
+
+    if "fahrerkarte" in text:
+        concepts.add("driver_card")
+
+    # Module 95 / deutsche Qualifikation
+    if any(
+        phrase in text
+        for phrase in (
+            "modul 95",
+            "module 95",
+            "schluesselzahl 95",
+            "berufskraftfahrerqualifikation",
+            "fahrerqualifizierungsnachweis",
+        )
+    ):
+        concepts.add("module_95_de")
+
+    # Schweizer CZV
+    if "czv" in text:
+        concepts.add("czv_ch")
+
+    if "ladungssicherung" in text:
+        concepts.add("load_security")
+
+    if (
+        "berufserfahrung" in text
+        or "fahrerfahrung" in text
+        or "berufspraxis" in text
+    ):
+        concepts.add("experience")
+
+    if any(
+        phrase in text
+        for phrase in (
+            "lkw fahrer",
+            "berufskraftfahrer",
+            "chauffeur",
+        )
+    ):
+        concepts.add("truck_driver")
+
+    if any(
+        phrase in text
+        for phrase in (
+            "nahverkehr",
+            "regionalverkehr",
+            "tagestour",
+            "lokalverkehr",
+        )
+    ):
+        concepts.add("local_transport")
+
+    if any(
+        phrase in text
+        for phrase in (
+            "auslieferung",
+            "zustellung",
+            "lieferung",
+        )
+    ):
+        concepts.add("delivery")
+
+    if "deutsch" in text:
+        concepts.add("german")
+
+    if "englisch" in text:
+        concepts.add("english")
+
+    if "zuverlaess" in text:
+        concepts.add("reliable")
+
+    if (
+        "selbststaendig" in text
+        or "eigenstaendig" in text
+    ):
+        concepts.add("independent")
+
+    if "teamfaeh" in text:
+        concepts.add("teamwork")
+
+    if "puenktlich" in text:
+        concepts.add("punctual")
+
+    if "verantwortungsbewusst" in text:
+        concepts.add("responsible")
+
+    if any(
+        phrase in text
+        for phrase in (
+            "fruehe arbeitszeiten",
+            "fruehschicht",
+            "frueher arbeitsbeginn",
+        )
+    ):
+        concepts.add("early_hours")
+
+    if "flexibel" in text:
+        concepts.add("flexible")
+
+    if (
+        "kundenkontakt" in text
+        or "kundenorient" in text
+    ):
+        concepts.add("customer_contact")
+
+    return concepts
+
+
+def is_optional_requirement(requirement):
+    """
+    Erkennt Anforderungen, die lediglich
+    'von Vorteil', 'wünschenswert' usw. sind.
+    """
+    text = normalize(requirement)
+
+    optional_markers = (
+        "von vorteil",
+        "wuenschenswert",
+        "waere von vorteil",
+        "idealerweise",
+        "bevorzugt",
+        "nice to have",
     )
 
-    if overlap >= 0.50:
-        return True
+    return any(
+        marker in text
+        for marker in optional_markers
+    )
 
-    # Ähnlichkeit des gesamten Textes
-    similarity = SequenceMatcher(
-        None,
-        req,
-        qual,
-    ).ratio()
 
-    if similarity >= 0.72:
-        return True
+def requirement_matches(
+    requirement,
+    profile_concepts,
+    profile_text,
+):
+    """
+    Strenger Vergleich.
 
-    return False
+    Keine unscharfe Prozent-/Textähnlichkeit.
+    """
+    required = requirement_concepts(
+        requirement
+    )
+
+    # Wenn bekannte Fachbegriffe erkannt wurden:
+    if required:
+        return required.issubset(
+            profile_concepts
+        )
+
+    # Fallback nur bei deutlicher direkter Textübereinstimmung
+    req = normalize(requirement)
+    profile = normalize(profile_text)
+
+    if not req or not profile:
+        return False
+
+    important_words = [
+        word
+        for word in req.split()
+        if (
+            len(word) >= 5
+            and word not in {
+                "kenntnisse",
+                "erfahrung",
+                "arbeitsweise",
+                "bereitschaft",
+                "mehrjaehrige",
+                "mehrjaehriger",
+                "mehrjaehriges",
+                "gueltige",
+                "gute",
+                "vorteil",
+            }
+        )
+    ]
+
+    if not important_words:
+        return False
+
+    matched_words = sum(
+        1
+        for word in important_words
+        if word in profile
+    )
+
+    # mindestens zwei deutliche Begriffe
+    # oder alle Begriffe bei einer kurzen Anforderung
+    if len(important_words) <= 2:
+        return (
+            matched_words
+            == len(important_words)
+        )
+
+    return matched_words >= 2
 
 
 def compare_requirements(
     requirements,
+    experience,
     qualifications,
 ):
     """
-    Vergleicht alle Anforderungen mit
-    allen vorhandenen Qualifikationen.
+    Vergleicht Stellenanforderungen mit echten
+    Angaben aus Berufserfahrung und Qualifikationen.
+
+    Das Hervorhebungsfeld wird bewusst NICHT
+    als Nachweis verwendet.
     """
+
+    profile_text = (
+        f"{experience}\n{qualifications}"
+    )
+
+    profile_concepts = detect_concepts(
+        profile_text
+    )
+
     matched = []
     missing = []
 
-    for requirement in requirements:
-        found = False
+    detailed_results = []
 
-        for qualification in qualifications:
-            if requirement_matches(
-                requirement,
-                qualification,
-            ):
-                found = True
-                break
+    for requirement in requirements:
+
+        optional = is_optional_requirement(
+            requirement
+        )
+
+        found = requirement_matches(
+            requirement,
+            profile_concepts,
+            profile_text,
+        )
+
+        detailed_results.append(
+            {
+                "requirement": requirement,
+                "matched": found,
+                "optional": optional,
+            }
+        )
 
         if found:
             matched.append(requirement)
-        else:
-            missing.append(requirement)
 
-    return matched, missing
+        else:
+            if optional:
+                missing.append(
+                    f"{requirement} (optional)"
+                )
+            else:
+                missing.append(requirement)
+
+    return matched, missing, detailed_results
 
 
 def calculate_match_rate(
-    requirements,
-    matched,
+    detailed_results,
 ):
     """
-    Berechnet die Übereinstimmung in Prozent.
+    Berechnet eine realistischere Trefferquote.
+
+    Pflichtanforderung = Gewicht 1.0
+    optionale Anforderung = Gewicht 0.5
     """
-    if not requirements:
+
+    if not detailed_results:
         return 0
 
-    rate = (
-        len(matched)
-        / len(requirements)
-    ) * 100
+    possible = 0.0
+    achieved = 0.0
 
-    return round(rate)
+    for result in detailed_results:
+
+        weight = (
+            0.5
+            if result["optional"]
+            else 1.0
+        )
+
+        possible += weight
+
+        if result["matched"]:
+            achieved += weight
+
+    if possible == 0:
+        return 0
+
+    return round(
+        achieved
+        / possible
+        * 100
+    )
 
 
-# ---------------------------------------------------------
+# =========================================================
 # Bewerberprofil
-# ---------------------------------------------------------
+# =========================================================
 
 def load_profile():
     """
     Gespeichertes Bewerberprofil laden.
     """
+
     if not PROFILE_FILE.exists():
         return {
             "experience": "",
@@ -399,10 +629,12 @@ def load_profile():
         }
 
     try:
+
         with PROFILE_FILE.open(
             "r",
             encoding="utf-8",
         ) as file:
+
             data = json.load(file)
 
         return {
@@ -424,6 +656,7 @@ def load_profile():
         json.JSONDecodeError,
         OSError,
     ):
+
         return {
             "experience": "",
             "qualifications": "",
@@ -439,6 +672,7 @@ def save_profile(
     """
     Bewerberprofil lokal speichern.
     """
+
     profile = {
         "experience": experience,
         "qualifications": qualifications,
@@ -449,6 +683,7 @@ def save_profile(
         "w",
         encoding="utf-8",
     ) as file:
+
         json.dump(
             profile,
             file,
@@ -457,15 +692,16 @@ def save_profile(
         )
 
 
-# ---------------------------------------------------------
+# =========================================================
 # Stellenbezeichnung erkennen
-# ---------------------------------------------------------
+# =========================================================
 
 def extract_role(job_ad):
     """
-    Versucht automatisch die Stellenbezeichnung
-    aus einer Stellenanzeige zu erkennen.
+    Erkennt möglichst die eigentliche
+    Stellenbezeichnung.
     """
+
     if not job_ad:
         return ""
 
@@ -479,24 +715,21 @@ def extract_role(job_ad):
         "fahrer",
         "fahrerin",
         "chauffeur",
-        "chauffeuse",
         "berufskraftfahrer",
         "lkw",
         "busfahrer",
         "buslenker",
         "kraftfahrer",
-        "mitarbeiter",
         "sachbearbeiter",
         "kundenservice",
         "datenerfassung",
-        "data entry",
         "support",
         "assistant",
         "assistenz",
     )
 
-    # Zuerst nach einer typischen Stellenbezeichnung suchen
     for line in lines[:15]:
+
         cleaned = re.sub(
             r"^[\-\*\u2022✓✔►▪]+\s*",
             "",
@@ -511,36 +744,43 @@ def extract_role(job_ad):
                 keyword in lower
                 for keyword in job_keywords
             )
+            and not lower.startswith(
+                "wir suchen"
+            )
         ):
             return cleaned
 
-    # Falls nichts erkannt wurde:
-    # erste kurze sinnvolle Zeile nehmen
     for line in lines[:10]:
+
         cleaned = re.sub(
             r"^[\-\*\u2022✓✔►▪]+\s*",
             "",
             line,
         ).strip()
 
+        lower = cleaned.lower()
+
         if (
             3 <= len(cleaned) <= 100
             and not cleaned.endswith(".")
+            and not lower.startswith(
+                "wir suchen"
+            )
         ):
             return cleaned
 
     return ""
 
 
-# ---------------------------------------------------------
-# Anforderungen aus Stellenanzeige erkennen
-# ---------------------------------------------------------
+# =========================================================
+# Anforderungen automatisch erkennen
+# =========================================================
 
 def extract_requirements(job_ad):
     """
-    Extrahiert wahrscheinliche Anforderungen
-    aus einer kompletten Stellenanzeige.
+    Extrahiert nur echte wahrscheinliche Anforderungen.
     """
+
     if not job_ad:
         return ""
 
@@ -550,7 +790,6 @@ def extract_requirements(job_ad):
         "kenntnisse",
         "führerschein",
         "fuehrerschein",
-        "klasse b",
         "klasse c",
         "klasse ce",
         "qualifikation",
@@ -578,15 +817,19 @@ def extract_requirements(job_ad):
         "flexibilitaet",
         "pünktlich",
         "puenktlich",
+        "verantwortungsbewusst",
         "kundenorient",
-        "selbständig",
         "eigenständig",
         "eigenstaendig",
+        "arbeitszeiten",
+        "frühschicht",
+        "fruehschicht",
     )
 
-    ignored_phrases = (
+    ignored_starts = (
         "wir suchen",
         "wir bieten",
+        "wir freuen",
         "ihre aufgaben",
         "deine aufgaben",
         "aufgaben",
@@ -600,9 +843,9 @@ def extract_requirements(job_ad):
         "ueber uns",
         "bewerben sie sich",
         "jetzt bewerben",
-        "benefits",
-        "was wir bieten",
-        "das bieten wir",
+        "bei uns erwartet",
+        "freuen sie sich",
+        "freue dich",
     )
 
     extracted = []
@@ -613,6 +856,7 @@ def extract_requirements(job_ad):
     ).split("\n")
 
     for raw_line in lines:
+
         line = raw_line.strip()
 
         if not line:
@@ -629,59 +873,42 @@ def extract_requirements(job_ad):
 
         lower = line.lower().rstrip(":")
 
-        # Überschriften ignorieren
+        # Überschriften und Werbesätze ausschließen
         if any(
             lower == phrase
-            for phrase in ignored_phrases
+            or lower.startswith(phrase)
+            for phrase in ignored_starts
         ):
             continue
 
-        # Werbetexte ignorieren
+        # Aufgaben nicht automatisch als Anforderungen behandeln
+        task_phrases = (
+            "durchführung von",
+            "durchfuehrung von",
+            "be- und entladen",
+            "kontrolle und sicherung",
+            "pflege und kontrolle",
+            "dokumentation der",
+            "freundlicher umgang",
+        )
+
         if any(
-            lower.startswith(phrase)
-            for phrase in (
-                "wir bieten",
-                "wir bieten ihnen",
-                "wir bieten dir",
-                "bei uns erwartet",
-                "freuen sie sich",
-                "freue dich",
-            )
+            lower.startswith(task)
+            for task in task_phrases
         ):
             continue
 
-        # Kurze reine Stellenbezeichnungen ignorieren
-        if (
-            len(line) < 80
-            and any(
-                word in lower
-                for word in (
-                    "lkw-fahrer",
-                    "lkw fahrer",
-                    "berufskraftfahrer",
-                    "chauffeur",
-                    "busfahrer",
-                    "kraftfahrer",
-                )
-            )
-            and not any(
-                keyword in lower
-                for keyword in requirement_keywords
-            )
-        ):
-            continue
-
-        # Anforderungen erkennen
+        # Nur Zeilen mit echten Anforderungssignalen
         if any(
             keyword in lower
             for keyword in requirement_keywords
         ):
             extracted.append(line)
 
-    # Duplikate entfernen
     unique = []
 
     for item in extracted:
+
         normalized_item = normalize(item)
 
         if not any(
@@ -696,64 +923,49 @@ def extract_requirements(job_ad):
     )
 
 
-# ---------------------------------------------------------
+# =========================================================
 # Zusammenfassung
-# ---------------------------------------------------------
+# =========================================================
 
 def build_summary(
     role,
-    requirements,
-    qualifications,
-    matched,
-    missing,
+    detailed_results,
+    match_rate,
 ):
     """
-    Erstellt eine verständliche Auswertung.
+    Erstellt eine verständliche Zusammenfassung.
     """
-    match_rate = calculate_match_rate(
-        requirements,
-        matched,
-    )
 
     lines = [
         f"Stelle: {role}",
         "",
         f"Übereinstimmung: {match_rate} %",
         "",
-        "Passende Anforderungen:",
+        "Erkannte Anforderungen:",
     ]
 
-    if matched:
-        for item in matched:
-            lines.append(
-                f"✓ {item}"
-            )
-    else:
-        lines.append(
-            "Keine eindeutigen Treffer erkannt."
-        )
+    for result in detailed_results:
 
-    lines.append("")
-    lines.append(
-        "Noch nicht erkannte Anforderungen:"
-    )
+        requirement = result["requirement"]
 
-    if missing:
-        for item in missing:
+        if result["optional"]:
+            requirement += " [optional]"
+
+        if result["matched"]:
             lines.append(
-                f"• {item}"
+                f"✓ {requirement}"
             )
-    else:
-        lines.append(
-            "Keine."
-        )
+        else:
+            lines.append(
+                f"✗ {requirement}"
+            )
 
     return "\n".join(lines)
 
 
-# ---------------------------------------------------------
+# =========================================================
 # Anschreiben
-# ---------------------------------------------------------
+# =========================================================
 
 def build_letter(
     role,
@@ -763,14 +975,11 @@ def build_letter(
     matched,
 ):
     """
-    Erstellt ein einfaches Bewerbungsanschreiben.
+    Erstellt ein Bewerbungsanschreiben.
     """
+
     qualification_text = ", ".join(
         qualifications
-    )
-
-    matched_text = ", ".join(
-        matched
     )
 
     paragraphs = [
@@ -779,12 +988,13 @@ def build_letter(
         "Sehr geehrte Damen und Herren,",
         "",
         (
-            f"mit großem Interesse bewerbe ich mich "
+            f"mit Interesse bewerbe ich mich "
             f"bei Ihnen als {role}."
         ),
     ]
 
     if experience:
+
         paragraphs.extend(
             [
                 "",
@@ -796,30 +1006,39 @@ def build_letter(
         )
 
     if qualification_text:
+
         paragraphs.extend(
             [
                 "",
                 (
-                    "Zu meinen Qualifikationen zählen "
-                    f"unter anderem {qualification_text}."
+                    "Zu meinen vorhandenen "
+                    "Qualifikationen zählen "
+                    f"{qualification_text}."
                 ),
             ]
         )
 
-    if matched_text:
+    if matched:
+
+        safe_matches = ", ".join(
+            matched[:5]
+        )
+
         paragraphs.extend(
             [
                 "",
                 (
-                    "Besonders gut passen zu Ihrem "
-                    "Anforderungsprofil meine Kenntnisse "
-                    f"und Erfahrungen in den Bereichen "
-                    f"{matched_text}."
+                    "Mehrere Anforderungen Ihrer "
+                    "Stelle decken sich mit meiner "
+                    "bisherigen Erfahrung und meinen "
+                    f"Qualifikationen, darunter "
+                    f"{safe_matches}."
                 ),
             ]
         )
 
     if focus:
+
         paragraphs.extend(
             [
                 "",
@@ -831,10 +1050,9 @@ def build_letter(
         [
             "",
             (
-                "Gerne überzeuge ich Sie in einem "
-                "persönlichen Gespräch oder bei einem "
-                "Probearbeitstag von meiner Motivation "
-                "und meiner praktischen Erfahrung."
+                "Gerne erläutere ich Ihnen meine "
+                "Erfahrung und Qualifikationen in "
+                "einem persönlichen Gespräch."
             ),
             "",
             "Mit freundlichen Grüßen",
@@ -844,15 +1062,16 @@ def build_letter(
     return "\n".join(paragraphs)
 
 
-# ---------------------------------------------------------
+# =========================================================
 # Flask Hauptseite
-# ---------------------------------------------------------
+# =========================================================
 
 @app.route(
     "/",
     methods=["GET", "POST"],
 )
 def index():
+
     global last_letter
 
     result = None
@@ -919,13 +1138,11 @@ def index():
             "",
         ).strip()
 
-        # -------------------------------------------------
         # Profil speichern
-        # -------------------------------------------------
-
         if action == "save_profile":
 
             try:
+
                 save_profile(
                     form_data["experience"],
                     form_data[
@@ -945,28 +1162,26 @@ def index():
                     "nicht gespeichert werden."
                 )
 
-        # -------------------------------------------------
-        # Analyse / Anschreiben
-        # -------------------------------------------------
-
         else:
 
-            # Stellenbezeichnung automatisch erkennen
+            # Stellenbezeichnung erkennen
             if (
                 not form_data["role"]
                 and form_data["job_ad"]
             ):
+
                 form_data[
                     "role"
                 ] = extract_role(
                     form_data["job_ad"]
                 )
 
-            # Anforderungen automatisch erkennen
+            # Anforderungen erkennen
             if (
                 not form_data["requirements"]
                 and form_data["job_ad"]
             ):
+
                 form_data[
                     "requirements"
                 ] = extract_requirements(
@@ -985,17 +1200,18 @@ def index():
                 error = (
                     "Es konnten keine Anforderungen "
                     "erkannt werden. Bitte die "
-                    "Stellenanforderungen manuell "
-                    "eingeben."
+                    "Anforderungen manuell eingeben."
                 )
 
-            elif not form_data[
-                "qualifications"
-            ]:
+            elif not (
+                form_data["qualifications"]
+                or form_data["experience"]
+            ):
 
                 error = (
-                    "Bitte mindestens eine vorhandene "
-                    "Qualifikation eingeben."
+                    "Bitte Berufserfahrung oder "
+                    "vorhandene Qualifikationen "
+                    "eingeben."
                 )
 
             else:
@@ -1010,26 +1226,28 @@ def index():
                     ]
                 )
 
-                matched, missing = (
-                    compare_requirements(
-                        requirements,
-                        qualifications,
-                    )
+                (
+                    matched,
+                    missing,
+                    detailed_results,
+                ) = compare_requirements(
+                    requirements,
+                    form_data["experience"],
+                    form_data[
+                        "qualifications"
+                    ],
                 )
 
                 match_rate = (
                     calculate_match_rate(
-                        requirements,
-                        matched,
+                        detailed_results
                     )
                 )
 
                 result = build_summary(
                     form_data["role"],
-                    requirements,
-                    qualifications,
-                    matched,
-                    missing,
+                    detailed_results,
+                    match_rate,
                 )
 
                 if action == "generate_letter":
@@ -1059,14 +1277,15 @@ def index():
     )
 
 
-# ---------------------------------------------------------
-# Anschreiben TXT
-# ---------------------------------------------------------
+# =========================================================
+# TXT Download
+# =========================================================
 
 @app.route("/download-letter")
 def download_letter():
 
     if not last_letter:
+
         return (
             "Noch kein Anschreiben vorhanden.",
             400,
@@ -1084,14 +1303,15 @@ def download_letter():
     )
 
 
-# ---------------------------------------------------------
-# Anschreiben PDF
-# ---------------------------------------------------------
+# =========================================================
+# PDF Download
+# =========================================================
 
 @app.route("/download-letter-pdf")
 def download_letter_pdf():
 
     if not last_letter:
+
         return (
             "Noch kein Anschreiben vorhanden.",
             400,
@@ -1130,6 +1350,7 @@ def download_letter_pdf():
     for paragraph in last_letter.split(
         "\n"
     ):
+
         paragraph = paragraph.strip()
 
         if paragraph:
@@ -1164,14 +1385,16 @@ def download_letter_pdf():
     )
 
 
-# ---------------------------------------------------------
+# =========================================================
 # Start
-# ---------------------------------------------------------
+# =========================================================
 
 if __name__ == "__main__":
+
     print(
-        "Bewerbungshelfer AI Version 0.7.0"
+        "Bewerbungshelfer AI Version 0.7.1"
     )
+
     print(
         "Webseite: http://127.0.0.1:5000"
     )
