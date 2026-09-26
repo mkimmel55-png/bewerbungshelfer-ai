@@ -93,7 +93,7 @@ focus = st.text_area("Persönliche Stärken", value=profile.get("focus", ""), he
 st.progress(0.75, text="Schritt 3 von 4 · Analyse")
 st.subheader("3. Analyse")
 st.caption("Die Angaben werden konservativ verglichen. Nicht belegte Qualifikationen werden nicht ergänzt.")
-submitted = st.button("Bewerbung analysieren", type="primary", use_container_width=True)
+submitted = st.button("Bewerbung analysieren", type="primary", width="stretch")
 
 if submitted:
     role = role.strip()

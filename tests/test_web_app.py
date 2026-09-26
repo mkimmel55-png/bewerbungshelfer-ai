@@ -45,6 +45,13 @@ class JobAdAnalysisTests(unittest.TestCase):
         self.assertIn("Berufskraftfahrer", role)
         self.assertNotIn("Wir suchen", role)
 
+    def test_generic_role_is_extracted_before_profile_heading(self):
+        role = extract_role(
+            "Wir suchen einen Projektmanager (m/w/d) für digitale Projekte.\n"
+            "\nIhr Profil\n- Erfahrung im Projektmanagement"
+        )
+        self.assertEqual(role, "Projektmanager (m/w/d)")
+
     def test_benefits_and_tasks_are_not_requirements(self):
         requirements = extract_requirements(JOB_AD).splitlines()
         self.assertEqual(len(requirements), 10)

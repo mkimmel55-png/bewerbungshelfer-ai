@@ -748,6 +748,22 @@ def extract_role(job_ad):
         if role:
             return role
 
+    # Allgemeine Einleitungssätze wie „Wir suchen einen Projektmanager ... für ...“
+    # sollen ebenfalls die eigentliche Rolle liefern und keine Überschrift aus
+    # dem folgenden Abschnitt (z. B. „Ihr Profil“).
+    generic_intro_pattern = re.compile(
+        r"\b(?:einen|eine|ein)\s+"
+        r"(?P<role>[A-ZÄÖÜ][\wÄÖÜäöüß-]+(?:\s+\([^)]+\))?"
+        r"(?:\s*/\s*[A-ZÄÖÜ][\wÄÖÜäöüß-]+)?)\s+"
+        r"(?:für|im|in)\b",
+        re.IGNORECASE,
+    )
+    match = generic_intro_pattern.search(intro_text)
+    if match:
+        role = re.sub(r"\s+", " ", match.group("role")).strip(" ,;:-")
+        if role:
+            return role
+
     for line in lines[:20]:
 
         cleaned = re.sub(
@@ -757,6 +773,9 @@ def extract_role(job_ad):
         ).strip()
 
         lower = cleaned.lower()
+
+        if lower in {"ihr profil", "ihr aufgabenbereich", "aufgaben", "anforderungen"}:
+            continue
 
         if (
             3 <= len(cleaned) <= 120
