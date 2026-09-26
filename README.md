@@ -9,6 +9,10 @@ Ein kleines Open-Source-Projekt, das Bewerberinnen und Bewerbern dabei hilft, St
 - Passende Stärken hervorheben
 - Einen Entwurf für ein Anschreiben erzeugen
 - Hinweise auf fehlende Angaben oder mögliche Lücken geben
+- Stellenanforderungen mit vorhandenen Qualifikationen vergleichen
+- passende Anforderungen erkennen
+- fehlende oder nicht erkannte Anforderungen anzeigen
+- Nutzung über eine einfache Weboberfläche
 
 ## Ziel
 
@@ -19,6 +23,8 @@ Die Anwendung soll keine Qualifikationen erfinden und ersetzt keine persönliche
 ## Schnellstart
 
 Voraussetzung: Python 3.10 oder neuer.
+
+Für die Kommandozeilen-Version:
 
 ```bash
 python app.py
