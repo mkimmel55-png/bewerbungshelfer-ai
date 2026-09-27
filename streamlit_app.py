@@ -5,12 +5,11 @@ import streamlit as st
 from app import (
     build_letter,
     build_summary,
-    calculate_match_rate,
-    compare_requirements,
     extract_resume_profile,
     extract_resume_text,
     split_items,
 )
+from web_app import compare_requirements, calculate_match_rate, extract_requirements, extract_role
 
 
 st.set_page_config(
@@ -52,7 +51,6 @@ with col_b:
     requirements_text = st.text_area("Anforderungen manuell (Alternative)", height=100, placeholder="Eine Anforderung pro Zeile")
 
 if job_ad.strip():
-    from web_app import extract_requirements, extract_role
     detected_role = extract_role(job_ad)
     detected_requirements = extract_requirements(job_ad)
     if not role.strip() and detected_role:
@@ -111,8 +109,8 @@ if submitted:
     else:
         requirements = split_items(requirements_text)
         qualifications = split_items(qualifications_text)
-        matched, missing = compare_requirements(requirements, qualifications, experience)
-        match_rate = calculate_match_rate(requirements, matched)
+        matched, missing, details = compare_requirements(requirements, experience, qualifications_text, focus)
+        match_rate = calculate_match_rate(details)
 
         st.session_state["letter"] = build_letter(
             role, experience, qualifications, focus, matched

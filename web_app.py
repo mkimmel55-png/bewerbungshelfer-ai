@@ -140,6 +140,8 @@ CONCEPT_GROUPS = {
         "ladungsicherung",
     },
 
+    "adr": {"adr", "adr schein", "gefahrgutschein"},
+
     "experience": {
         "berufserfahrung",
         "fahrerfahrung",
@@ -283,6 +285,15 @@ def detect_concepts(text):
                 normalized_text,
                 phrase,
             ):
+                # Erwähnte, aber ausdrücklich fehlende oder abgelaufene
+                # Nachweise dürfen keinen positiven Treffer erzeugen.
+                if concept in {"module_95_de", "czv_ch", "driver_card", "adr"}:
+                    lines = [normalize(line) for line in re.split(r"[\n;]", text)]
+                    if all(
+                        re.search(r"\b(abgelaufen|ungueltig|fehlt|nicht vorhanden|ohne)\b", line)
+                        for line in lines if contains_phrase(line, phrase)
+                    ):
+                        continue
                 detected.add(concept)
                 break
 
@@ -338,6 +349,9 @@ def requirement_concepts(requirement):
 
     if "ladungssicherung" in text:
         concepts.add("load_security")
+
+    if re.search(r"\badr\b", text):
+        concepts.add("adr")
 
     if (
         "berufserfahrung" in text
@@ -518,6 +532,7 @@ def compare_requirements(
     requirements,
     experience,
     qualifications,
+    strengths="",
 ):
     """
     Vergleicht Stellenanforderungen mit echten
@@ -527,9 +542,7 @@ def compare_requirements(
     als Nachweis verwendet.
     """
 
-    profile_text = (
-        f"{experience}\n{qualifications}"
-    )
+    profile_text = f"{experience}\n{qualifications}\n{strengths}"
 
     profile_concepts = detect_concepts(
         profile_text
