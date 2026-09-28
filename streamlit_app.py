@@ -9,7 +9,15 @@ from app import (
     extract_resume_text,
     split_items,
 )
-
+from auth import (
+    consume_analysis_credit,
+    current_user_email,
+    get_profile,
+    is_logged_in,
+    login,
+    logout,
+    register,
+)
 from web_app import (
     compare_requirements,
     calculate_match_rate,
@@ -18,20 +26,12 @@ from web_app import (
 )
 
 
-# ---------------------------------------------------------
-# SEITENKONFIGURATION
-# ---------------------------------------------------------
-
 st.set_page_config(
     page_title="Bewerbungshelfer AI",
     page_icon="📝",
     layout="wide",
 )
 
-
-# ---------------------------------------------------------
-# DESIGN / CSS
-# ---------------------------------------------------------
 
 st.html(
     """
@@ -131,11 +131,263 @@ if "resume_profile" not in st.session_state:
 
 
 # ---------------------------------------------------------
-# NAVIGATION
+# HILFSFUNKTIONEN
 # ---------------------------------------------------------
 
 def go_to_checker():
-    st.session_state["page"] = "Bewerbung prüfen"
+    if is_logged_in():
+        st.session_state["page"] = "Bewerbung prüfen"
+    else:
+        st.session_state["page"] = "Konto"
+
+
+def show_hero(title: str, text: str):
+    st.html(
+        f"""
+        <div class="hero">
+            <h1>{title}</h1>
+            <p>{text}</p>
+        </div>
+        """
+    )
+
+
+# ---------------------------------------------------------
+# KONTO / LOGIN
+# ---------------------------------------------------------
+
+def show_account():
+
+    show_hero(
+        "Konto",
+        "Anmelden oder kostenlos registrieren und 2 Bewerbungsanalysen erhalten.",
+    )
+
+    if is_logged_in():
+
+        st.success(
+            f"Angemeldet als {current_user_email()}"
+        )
+
+        try:
+            profile = get_profile()
+        except Exception as exc:
+            st.error(
+                f"Profil konnte nicht geladen werden: {exc}"
+            )
+            return
+
+        if profile:
+            c1, c2, c3 = st.columns(3)
+
+            c1.metric(
+                "Tarif",
+                str(
+                    profile.get(
+                        "plan",
+                        "free",
+                    )
+                ).upper(),
+            )
+
+            c2.metric(
+                "Verbleibende Analysen",
+                profile.get(
+                    "credits",
+                    0,
+                ),
+            )
+
+            c3.metric(
+                "Bisher genutzt",
+                profile.get(
+                    "analyses_used",
+                    0,
+                ),
+            )
+
+        if st.button(
+            "Zur Bewerbungsprüfung",
+            type="primary",
+            use_container_width=True,
+        ):
+            st.session_state["page"] = "Bewerbung prüfen"
+            st.rerun()
+
+        if st.button(
+            "Abmelden",
+            use_container_width=True,
+        ):
+            logout()
+            st.session_state["page"] = "Start"
+            st.rerun()
+
+        return
+
+
+    login_tab, register_tab = st.tabs(
+        [
+            "Anmelden",
+            "Registrieren",
+        ]
+    )
+
+
+    with login_tab:
+
+        with st.form(
+            "login_form"
+        ):
+
+            email = st.text_input(
+                "E-Mail-Adresse",
+                key="login_email",
+            )
+
+            password = st.text_input(
+                "Passwort",
+                type="password",
+                key="login_password",
+            )
+
+            submitted = st.form_submit_button(
+                "Anmelden",
+                type="primary",
+                use_container_width=True,
+            )
+
+
+        if submitted:
+
+            if (
+                not email.strip()
+                or not password
+            ):
+                st.error(
+                    "Bitte E-Mail-Adresse und Passwort eingeben."
+                )
+
+            else:
+                try:
+                    login(
+                        email,
+                        password,
+                    )
+
+                    st.success(
+                        "Anmeldung erfolgreich."
+                    )
+
+                    st.session_state[
+                        "page"
+                    ] = "Bewerbung prüfen"
+
+                    st.rerun()
+
+                except Exception as exc:
+                    st.error(
+                        "Anmeldung fehlgeschlagen. "
+                        "Bitte E-Mail-Adresse, Passwort "
+                        "und E-Mail-Bestätigung prüfen."
+                    )
+
+                    st.caption(
+                        str(exc)
+                    )
+
+
+    with register_tab:
+
+        st.info(
+            "Neue Konten erhalten einmalig "
+            "2 kostenlose vollständige Analysen."
+        )
+
+        with st.form(
+            "register_form"
+        ):
+
+            email = st.text_input(
+                "E-Mail-Adresse",
+                key="register_email",
+            )
+
+            password = st.text_input(
+                "Passwort",
+                type="password",
+                key="register_password",
+            )
+
+            password_repeat = st.text_input(
+                "Passwort wiederholen",
+                type="password",
+                key="register_password_repeat",
+            )
+
+            privacy_ok = st.checkbox(
+                "Ich akzeptiere, dass meine Kontodaten "
+                "zur Bereitstellung des Dienstes verarbeitet werden."
+            )
+
+            submitted = st.form_submit_button(
+                "Kostenlos registrieren",
+                type="primary",
+                use_container_width=True,
+            )
+
+
+        if submitted:
+
+            if not email.strip():
+                st.error(
+                    "Bitte eine E-Mail-Adresse eingeben."
+                )
+
+            elif len(password) < 8:
+                st.error(
+                    "Das Passwort muss mindestens "
+                    "8 Zeichen lang sein."
+                )
+
+            elif password != password_repeat:
+                st.error(
+                    "Die Passwörter stimmen nicht überein."
+                )
+
+            elif not privacy_ok:
+                st.error(
+                    "Bitte die Datenschutzhinweise bestätigen."
+                )
+
+            else:
+
+                try:
+                    result = register(
+                        email,
+                        password,
+                    )
+
+                    if result[
+                        "needs_email_confirmation"
+                    ]:
+                        st.success(
+                            "Registrierung erfolgreich. "
+                            "Bitte öffne jetzt die "
+                            "Bestätigungs-E-Mail von Supabase "
+                            "und bestätige deine Adresse. "
+                            "Danach kannst du dich anmelden."
+                        )
+
+                    else:
+                        st.success(
+                            "Registrierung erfolgreich. "
+                            "Du kannst dich jetzt anmelden."
+                        )
+
+                except Exception as exc:
+                    st.error(
+                        f"Registrierung fehlgeschlagen: {exc}"
+                    )
 
 
 # ---------------------------------------------------------
@@ -144,21 +396,18 @@ def go_to_checker():
 
 def show_start():
 
-    st.html(
-        """
-        <div class="hero">
-            <h1>Bewerbungshelfer AI</h1>
-            <p>
-                Prüfe, wie gut dein Profil zu einer Stellenanzeige passt
-                und verbessere gezielt die entscheidenden Punkte.
-            </p>
-        </div>
-        """
+    show_hero(
+        "Bewerbungshelfer AI",
+        "Prüfe, wie gut dein Profil zu einer Stellenanzeige passt "
+        "und verbessere gezielt die entscheidenden Punkte.",
     )
 
-    st.subheader("So funktioniert es")
+    st.subheader(
+        "So funktioniert es"
+    )
 
     col1, col2, col3 = st.columns(3)
+
 
     with col1:
         st.html(
@@ -173,6 +422,7 @@ def show_start():
             """
         )
 
+
     with col2:
         st.html(
             """
@@ -185,6 +435,7 @@ def show_start():
             </div>
             """
         )
+
 
     with col3:
         st.html(
@@ -199,9 +450,14 @@ def show_start():
             """
         )
 
-    st.markdown("### Bereits enthalten")
+
+    st.markdown(
+        "### Kostenlos starten"
+    )
 
     st.write(
+        "✓ Kostenloses Benutzerkonto  \n"
+        "✓ 2 vollständige Analysen zum Testen  \n"
         "✓ Stellenanzeigen analysieren  \n"
         "✓ Lebenslauf auslesen  \n"
         "✓ Match-Score berechnen  \n"
@@ -210,13 +466,13 @@ def show_start():
     )
 
     st.info(
-        "Die App befindet sich aktuell in der kostenlosen Beta. "
-        "Premium-Funktionen werden erst aktiviert, wenn Benutzerkonten, "
-        "Datenschutz und Zahlungsabwicklung vollständig umgesetzt sind."
+        "Premium-Zahlungen sind noch nicht aktiviert. "
+        "Die Konten- und Credit-Grundlage ist bereits "
+        "für die spätere Zahlungsanbindung vorbereitet."
     )
 
     st.button(
-        "Kostenlos Bewerbung prüfen",
+        "2 kostenlose Analysen sichern",
         type="primary",
         use_container_width=True,
         on_click=go_to_checker,
@@ -229,19 +485,14 @@ def show_start():
 
 def show_prices():
 
-    st.html(
-        """
-        <div class="hero">
-            <h1>Preise</h1>
-            <p>
-                Kostenlos starten. Premium erst aktivieren,
-                wenn die erweiterten Funktionen vollständig bereit sind.
-            </p>
-        </div>
-        """
+    show_hero(
+        "Preise",
+        "Kostenlos starten. Premium-Tarife werden "
+        "nach Abschluss der Zahlungsintegration freigeschaltet.",
     )
 
     col1, col2, col3 = st.columns(3)
+
 
     with col1:
         st.html(
@@ -249,9 +500,10 @@ def show_prices():
             <div class="price-card">
                 <h3>Free</h3>
                 <div class="price">0 €</div>
-                <p>Zum Testen und für einzelne Bewerbungen.</p>
+                <p>Zum Testen.</p>
                 <p>
-                    ✓ Basis-Analyse<br>
+                    ✓ Benutzerkonto<br>
+                    ✓ 2 Analysen einmalig<br>
                     ✓ Match-Score<br>
                     ✓ fehlende Anforderungen<br>
                     ✓ Anschreiben-Entwurf
@@ -259,6 +511,7 @@ def show_prices():
             </div>
             """
         )
+
 
     with col2:
         st.html(
@@ -268,14 +521,15 @@ def show_prices():
                 <div class="price">12,99 €</div>
                 <p>Geplant</p>
                 <p>
+                    ✓ 5 weitere Analysen<br>
                     ✓ vollständige Optimierung<br>
-                    ✓ mehrere Bewerbungen<br>
                     ✓ erweiterte Anschreiben<br>
                     ✓ Export-Funktionen
                 </p>
             </div>
             """
         )
+
 
     with col3:
         st.html(
@@ -294,9 +548,10 @@ def show_prices():
             """
         )
 
+
     st.caption(
-        "Die kostenpflichtigen Tarife sind aktuell noch nicht buchbar. "
-        "Die Preise dienen zunächst als Produktentwurf."
+        "Die kostenpflichtigen Tarife sind "
+        "noch nicht buchbar."
     )
 
 
@@ -306,28 +561,106 @@ def show_prices():
 
 def show_checker():
 
-    st.html(
-        """
-        <div class="hero">
-            <h1>Bewerbung prüfen</h1>
-            <p>
-                Stellenanzeige verstehen.
-                Profil prüfen.
-                Bewerbung gezielt verbessern.
-            </p>
-        </div>
-        """
+    if not is_logged_in():
+
+        st.warning(
+            "Für die Bewerbungsprüfung brauchst du "
+            "ein kostenloses Konto."
+        )
+
+        if st.button(
+            "Jetzt anmelden oder registrieren",
+            type="primary",
+            use_container_width=True,
+        ):
+            st.session_state["page"] = "Konto"
+            st.rerun()
+
+        return
+
+
+    try:
+        profile = get_profile()
+    except Exception as exc:
+        st.error(
+            f"Kontostand konnte nicht geladen werden: {exc}"
+        )
+        return
+
+
+    credits = (
+        int(
+            profile.get(
+                "credits",
+                0,
+            )
+        )
+        if profile
+        else 0
     )
 
+    plan = (
+        str(
+            profile.get(
+                "plan",
+                "free",
+            )
+        )
+        if profile
+        else "free"
+    )
+
+
+    show_hero(
+        "Bewerbung prüfen",
+        "Stellenanzeige verstehen. Profil prüfen. "
+        "Bewerbung gezielt verbessern.",
+    )
+
+
+    if plan == "pro":
+        st.success(
+            "Pro-Konto · Analysen ohne Credit-Abzug"
+        )
+
+    else:
+        st.info(
+            f"Angemeldet als {current_user_email()} · "
+            f"Verbleibende Analysen: {credits}"
+        )
+
+
+    if (
+        plan != "pro"
+        and credits <= 0
+    ):
+        st.warning(
+            "Deine kostenlosen Analysen sind aufgebraucht. "
+            "Die Bezahlfunktion wird als Nächstes freigeschaltet."
+        )
+
+        if st.button(
+            "Preise ansehen",
+            type="primary",
+            use_container_width=True,
+        ):
+            st.session_state["page"] = "Preise"
+            st.rerun()
+
+        return
+
+
     st.caption(
-        "Kostenlose Beta · Unterstützung bei der Vorbereitung "
-        "– keine automatische Einstellungsentscheidung."
+        "Unterstützung bei der Vorbereitung – "
+        "keine automatische Einstellungsentscheidung."
     )
 
     st.info(
-        "Datenschutz: Hochgeladene Lebensläufe werden nur während "
-        "dieser Sitzung verarbeitet. Bitte prüfe alle automatisch erkannten Angaben."
+        "Datenschutz: Hochgeladene Lebensläufe werden "
+        "in dieser App-Sitzung verarbeitet. "
+        "Bitte prüfe alle automatisch erkannten Angaben."
     )
+
 
     # -----------------------------------------------------
     # SCHRITT 1
@@ -338,7 +671,10 @@ def show_checker():
         text="Schritt 1 von 4 · Stellenanzeige",
     )
 
-    st.subheader("1. Stellenanzeige")
+    st.subheader(
+        "1. Stellenanzeige"
+    )
+
 
     job_ad = st.text_area(
         "Komplette Stellenanzeige einfügen",
@@ -350,13 +686,16 @@ def show_checker():
         ),
     )
 
+
     col_a, col_b = st.columns(2)
+
 
     with col_a:
         role = st.text_input(
             "Stellenbezeichnung (optional)",
             placeholder="z. B. Projektmanager (m/w/d)",
         )
+
 
     with col_b:
         requirements_text = st.text_area(
@@ -365,20 +704,29 @@ def show_checker():
             placeholder="Eine Anforderung pro Zeile",
         )
 
-    # -----------------------------------------------------
-    # AUTOMATISCHE ERKENNUNG
-    # -----------------------------------------------------
 
     if job_ad.strip():
 
-        detected_role = extract_role(job_ad)
-        detected_requirements = extract_requirements(job_ad)
+        detected_role = extract_role(
+            job_ad
+        )
 
-        if not role.strip() and detected_role:
+        detected_requirements = extract_requirements(
+            job_ad
+        )
+
+        if (
+            not role.strip()
+            and detected_role
+        ):
             role = detected_role
 
-        if not requirements_text.strip() and detected_requirements:
+        if (
+            not requirements_text.strip()
+            and detected_requirements
+        ):
             requirements_text = detected_requirements
+
 
         with st.expander(
             "Erkannte Stelleninformationen prüfen",
@@ -398,6 +746,7 @@ def show_checker():
                 key="detected_requirements",
             )
 
+
     # -----------------------------------------------------
     # SCHRITT 2
     # -----------------------------------------------------
@@ -407,35 +756,49 @@ def show_checker():
         text="Schritt 2 von 4 · Lebenslauf",
     )
 
-    st.subheader("2. Lebenslauf und persönliche Daten")
+    st.subheader(
+        "2. Lebenslauf und persönliche Daten"
+    )
+
 
     uploaded_resume = st.file_uploader(
         "Lebenslauf hochladen",
-        type=["pdf", "docx", "txt"],
+        type=[
+            "pdf",
+            "docx",
+            "txt",
+        ],
         help="Unterstützt PDF, DOCX und TXT.",
     )
 
-    # -----------------------------------------------------
-    # LEBENSLAUF AUSLESEN
-    # -----------------------------------------------------
 
     if (
         uploaded_resume is not None
         and uploaded_resume.name
-        != st.session_state.get("resume_filename")
+        != st.session_state.get(
+            "resume_filename"
+        )
     ):
 
         try:
 
-            resume_text = extract_resume_text(uploaded_resume)
+            resume_text = extract_resume_text(
+                uploaded_resume
+            )
 
-            st.session_state["resume_text"] = resume_text
+            st.session_state[
+                "resume_text"
+            ] = resume_text
 
-            st.session_state["resume_profile"] = extract_resume_profile(
+            st.session_state[
+                "resume_profile"
+            ] = extract_resume_profile(
                 resume_text
             )
 
-            st.session_state["resume_filename"] = uploaded_resume.name
+            st.session_state[
+                "resume_filename"
+            ] = uploaded_resume.name
 
             st.success(
                 f"{uploaded_resume.name} wurde gelesen. "
@@ -444,32 +807,46 @@ def show_checker():
 
         except ValueError as exc:
 
-            st.session_state["resume_text"] = ""
+            st.session_state[
+                "resume_text"
+            ] = ""
 
-            st.session_state["resume_profile"] = {
+            st.session_state[
+                "resume_profile"
+            ] = {
                 "experience": "",
                 "qualifications": "",
                 "focus": "",
             }
 
-            st.error(str(exc))
+            st.error(
+                str(exc)
+            )
 
-    profile = st.session_state["resume_profile"]
 
-    # -----------------------------------------------------
-    # AUSGELESENER TEXT
-    # -----------------------------------------------------
+    profile_data = st.session_state[
+        "resume_profile"
+    ]
+
 
     with st.expander(
         "Erkannten Lebenslauftext anzeigen",
-        expanded=bool(st.session_state["resume_text"]),
+        expanded=bool(
+            st.session_state[
+                "resume_text"
+            ]
+        ),
     ):
 
-        if st.session_state["resume_text"]:
+        if st.session_state[
+            "resume_text"
+        ]:
 
             st.text_area(
                 "Ausgelesener Text",
-                value=st.session_state["resume_text"],
+                value=st.session_state[
+                    "resume_text"
+                ],
                 height=180,
                 key="resume_text_review",
             )
@@ -481,20 +858,24 @@ def show_checker():
                 "Du kannst die Felder auch manuell ausfüllen."
             )
 
-    # -----------------------------------------------------
-    # BEWERBERPROFIL
-    # -----------------------------------------------------
 
     experience = st.text_area(
         "Berufserfahrung",
-        value=profile.get("experience", ""),
+        value=profile_data.get(
+            "experience",
+            "",
+        ),
         height=120,
         placeholder="Nur echte Erfahrungen angeben.",
     )
 
+
     qualifications_text = st.text_area(
         "Qualifikationen, Abschlüsse, Führerscheine und Sprachen",
-        value=profile.get("qualifications", ""),
+        value=profile_data.get(
+            "qualifications",
+            "",
+        ),
         height=120,
         placeholder=(
             "z. B. Ausbildung, Abschluss, "
@@ -502,14 +883,20 @@ def show_checker():
         ),
     )
 
+
     focus = st.text_area(
         "Persönliche Stärken",
-        value=profile.get("focus", ""),
+        value=profile_data.get(
+            "focus",
+            "",
+        ),
         height=90,
         placeholder=(
-            "z. B. zuverlässige und selbstständige Arbeitsweise"
+            "z. B. zuverlässige und "
+            "selbstständige Arbeitsweise"
         ),
     )
+
 
     # -----------------------------------------------------
     # SCHRITT 3
@@ -520,21 +907,22 @@ def show_checker():
         text="Schritt 3 von 4 · Analyse",
     )
 
-    st.subheader("3. Analyse")
-
-    st.caption(
-        "Nicht belegte Qualifikationen werden nicht ergänzt."
+    st.subheader(
+        "3. Analyse"
     )
 
+    st.caption(
+        "Ein Credit wird nur bei einer erfolgreich "
+        "gestarteten vollständigen Analyse verbraucht."
+    )
+
+
     submitted = st.button(
-        "Kostenlos analysieren",
+        "Analyse starten",
         type="primary",
         use_container_width=True,
     )
 
-    # -----------------------------------------------------
-    # ANALYSE
-    # -----------------------------------------------------
 
     if submitted:
 
@@ -544,25 +932,29 @@ def show_checker():
         experience = experience.strip()
         focus = focus.strip()
 
-        if not role:
 
+        if not role:
             st.error(
                 "Bitte eine Stellenbezeichnung eingeben."
             )
+            return
 
-        elif not requirements_text:
 
+        if not requirements_text:
             st.error(
                 "Bitte mindestens eine Stellenanforderung eingeben."
             )
+            return
 
-        elif not qualifications_text:
 
+        if not qualifications_text:
             st.error(
                 "Bitte mindestens eine vorhandene Qualifikation eingeben."
             )
+            return
 
-        else:
+
+        try:
 
             requirements = split_items(
                 requirements_text
@@ -583,7 +975,7 @@ def show_checker():
                 details
             )
 
-            st.session_state["letter"] = build_letter(
+            letter = build_letter(
                 role,
                 experience,
                 qualifications,
@@ -591,107 +983,177 @@ def show_checker():
                 matched,
             )
 
-            # -------------------------------------------------
-            # SCHRITT 4
-            # -------------------------------------------------
+        except Exception as exc:
 
-            st.progress(
-                1.0,
-                text="Schritt 4 von 4 · Ergebnis",
+            st.error(
+                f"Analyse konnte nicht erstellt werden: {exc}"
+            )
+            return
+
+
+        try:
+
+            credit_result = consume_analysis_credit()
+
+        except Exception as exc:
+
+            st.error(
+                f"Credit konnte nicht geprüft werden: {exc}"
+            )
+            return
+
+
+        if not credit_result[
+            "allowed"
+        ]:
+
+            st.warning(
+                "Deine kostenlosen Analysen sind aufgebraucht."
+            )
+            return
+
+
+        st.session_state[
+            "letter"
+        ] = letter
+
+
+        # -------------------------------------------------
+        # SCHRITT 4
+        # -------------------------------------------------
+
+        st.progress(
+            1.0,
+            text="Schritt 4 von 4 · Ergebnis",
+        )
+
+        st.subheader(
+            "4. Ergebnis"
+        )
+
+
+        if credit_result[
+            "plan"
+        ] != "pro":
+
+            st.success(
+                f"Analyse erstellt. "
+                f"Verbleibende Analysen: "
+                f"{credit_result['remaining']}"
             )
 
-            st.subheader("4. Ergebnis")
 
-            st.metric(
-                "Match-Score",
-                f"{match_rate} %",
-                help=(
-                    "Orientierung anhand der erkannten Anforderungen. "
-                    "Kein Einstellungsurteil."
-                ),
+        st.metric(
+            "Match-Score",
+            f"{match_rate} %",
+            help=(
+                "Orientierung anhand der erkannten Anforderungen. "
+                "Kein Einstellungsurteil."
+            ),
+        )
+
+
+        col1, col2 = st.columns(2)
+
+
+        with col1:
+
+            st.markdown(
+                "**Passende Anforderungen**"
             )
 
-            col1, col2 = st.columns(2)
+            if matched:
 
-            with col1:
-
-                st.markdown(
-                    "**Passende Anforderungen**"
-                )
-
-                if matched:
-
-                    for item in matched:
-                        st.success(item)
-
-                else:
-
-                    st.info(
-                        "Keine eindeutigen Treffer"
+                for item in matched:
+                    st.success(
+                        item
                     )
 
-            with col2:
+            else:
 
-                st.markdown(
-                    "**Fehlende oder nicht erkannte Anforderungen**"
+                st.info(
+                    "Keine eindeutigen Treffer"
                 )
 
-                if missing:
 
-                    for item in missing:
-                        st.warning(item)
+        with col2:
 
-                else:
-
-                    st.success("Keine")
-
-            with st.expander("Zusammenfassung"):
-
-                st.text(
-                    build_summary(
-                        role,
-                        requirements,
-                        qualifications,
-                        matched,
-                        missing,
-                    )
-                )
-
-            st.subheader(
-                "Verbesserungsvorschläge"
+            st.markdown(
+                "**Fehlende oder nicht erkannte Anforderungen**"
             )
 
             if missing:
 
-                st.warning(
-                    "Prüfe, ob du zu den fehlenden Anforderungen "
-                    "echte Nachweise oder konkrete Beispiele ergänzen kannst. "
-                    "Erfinde keine Angaben."
-                )
+                for item in missing:
+                    st.warning(
+                        item
+                    )
 
             else:
 
                 st.success(
-                    "Alle erkannten Anforderungen haben mindestens "
-                    "eine passende Angabe im Profil."
+                    "Keine"
                 )
 
-            st.subheader(
-                "Anschreiben-Entwurf"
+
+        with st.expander(
+            "Zusammenfassung"
+        ):
+
+            st.text(
+                build_summary(
+                    role,
+                    requirements,
+                    qualifications,
+                    matched,
+                    missing,
+                )
             )
 
-            st.text_area(
-                "Entwurf",
-                value=st.session_state["letter"],
-                height=320,
+
+        st.subheader(
+            "Verbesserungsvorschläge"
+        )
+
+
+        if missing:
+
+            st.warning(
+                "Prüfe, ob du zu den fehlenden Anforderungen "
+                "echte Nachweise oder konkrete Beispiele ergänzen kannst. "
+                "Erfinde keine Angaben."
             )
 
-            st.download_button(
-                "Anschreiben als TXT herunterladen",
-                data=st.session_state["letter"],
-                file_name="anschreiben.txt",
-                mime="text/plain",
+        else:
+
+            st.success(
+                "Alle erkannten Anforderungen haben mindestens "
+                "eine passende Angabe im Profil."
             )
+
+
+        st.subheader(
+            "Anschreiben-Entwurf"
+        )
+
+
+        st.text_area(
+            "Entwurf",
+            value=st.session_state[
+                "letter"
+            ],
+            height=320,
+        )
+
+
+        st.download_button(
+            "Anschreiben als TXT herunterladen",
+            data=st.session_state[
+                "letter"
+            ],
+            file_name="anschreiben.txt",
+            mime="text/plain",
+        )
 
 
 # ---------------------------------------------------------
@@ -702,23 +1164,100 @@ st.sidebar.title(
     "Bewerbungshelfer AI"
 )
 
+
+if is_logged_in():
+
+    st.sidebar.caption(
+        f"Angemeldet: {current_user_email()}"
+    )
+
+    try:
+
+        sidebar_profile = get_profile()
+
+        if sidebar_profile:
+
+            if (
+                sidebar_profile.get(
+                    "plan"
+                )
+                == "pro"
+            ):
+                st.sidebar.success(
+                    "Pro"
+                )
+
+            else:
+                st.sidebar.info(
+                    f"Analysen übrig: "
+                    f"{sidebar_profile.get('credits', 0)}"
+                )
+
+    except Exception:
+        pass
+
+else:
+
+    st.sidebar.caption(
+        "Nicht angemeldet"
+    )
+
+
 if st.sidebar.button(
     "Start",
     use_container_width=True,
 ):
-    st.session_state["page"] = "Start"
+    st.session_state[
+        "page"
+    ] = "Start"
+
 
 if st.sidebar.button(
     "Bewerbung prüfen",
     use_container_width=True,
 ):
-    st.session_state["page"] = "Bewerbung prüfen"
+
+    st.session_state[
+        "page"
+    ] = (
+        "Bewerbung prüfen"
+        if is_logged_in()
+        else "Konto"
+    )
+
+
+if st.sidebar.button(
+    "Konto",
+    use_container_width=True,
+):
+    st.session_state[
+        "page"
+    ] = "Konto"
+
 
 if st.sidebar.button(
     "Preise",
     use_container_width=True,
 ):
-    st.session_state["page"] = "Preise"
+    st.session_state[
+        "page"
+    ] = "Preise"
+
+
+if is_logged_in():
+
+    if st.sidebar.button(
+        "Abmelden",
+        use_container_width=True,
+    ):
+
+        logout()
+
+        st.session_state[
+            "page"
+        ] = "Start"
+
+        st.rerun()
 
 
 st.sidebar.divider()
@@ -736,14 +1275,26 @@ st.sidebar.caption(
 # SEITENANZEIGE
 # ---------------------------------------------------------
 
-if st.session_state["page"] == "Start":
-
+if (
+    st.session_state["page"]
+    == "Start"
+):
     show_start()
 
-elif st.session_state["page"] == "Bewerbung prüfen":
-
+elif (
+    st.session_state["page"]
+    == "Bewerbung prüfen"
+):
     show_checker()
 
-elif st.session_state["page"] == "Preise":
+elif (
+    st.session_state["page"]
+    == "Konto"
+):
+    show_account()
 
+elif (
+    st.session_state["page"]
+    == "Preise"
+):
     show_prices()
