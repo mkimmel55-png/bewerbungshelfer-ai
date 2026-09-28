@@ -33,111 +33,82 @@ st.set_page_config(
 # DESIGN / CSS
 # ---------------------------------------------------------
 
-st.markdown(
+st.html(
     """
-<style>
+    <style>
+    .block-container {
+        max-width: 1150px;
+        padding-top: 2rem;
+    }
 
-.block-container {
-    max-width: 1150px;
-    padding-top: 2rem;
-}
+    .hero {
+        padding: 2rem;
+        border-radius: 1.2rem;
+        background: linear-gradient(135deg, #173b67, #2b72c7);
+        color: white;
+        margin-bottom: 1.5rem;
+    }
 
+    .hero h1 {
+        margin: 0;
+        font-size: clamp(2rem, 5vw, 3.2rem);
+    }
 
-/* HERO-BEREICH */
+    .hero p {
+        margin: .7rem 0 0;
+        font-size: 1.1rem;
+        opacity: .95;
+    }
 
-.hero {
-    padding: 2rem;
-    border-radius: 1.2rem;
-    background: linear-gradient(
-        135deg,
-        #173b67,
-        #2b72c7
-    );
-    color: white;
-    margin-bottom: 1.5rem;
-}
+    .card {
+        border: 1px solid #e1e5eb;
+        border-radius: 1rem;
+        padding: 1.25rem;
+        background: white;
+        min-height: 190px;
+    }
 
-.hero h1 {
-    margin: 0;
-    font-size: clamp(
-        2rem,
-        5vw,
-        3.2rem
-    );
-}
+    .card h3 {
+        margin-top: 0;
+    }
 
-.hero p {
-    margin: .7rem 0 0;
-    font-size: 1.1rem;
-    opacity: .95;
-}
+    .price-card {
+        border: 1px solid #d8e0ea;
+        border-radius: 1rem;
+        padding: 1.3rem;
+        background: white;
+        min-height: 250px;
+    }
 
+    .price-card h3 {
+        margin-top: 0;
+    }
 
-/* FUNKTIONSKARTEN */
+    .price {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: #173b67;
+    }
 
-.card {
-    border: 1px solid #e1e5eb;
-    border-radius: 1rem;
-    padding: 1.25rem;
-    background: white;
-    min-height: 190px;
-}
+    [data-testid="stMetricValue"] {
+        color: #173b67;
+    }
 
+    div.stButton > button[kind="primary"] {
+        background: linear-gradient(135deg, #173b67, #2b72c7);
+        border: none;
+        color: white;
+        border-radius: 0.65rem;
+        font-weight: 600;
+    }
 
-/* PREISKARTEN */
-
-.price-card {
-    border: 1px solid #d8e0ea;
-    border-radius: 1rem;
-    padding: 1.3rem;
-    background: white;
-    min-height: 250px;
-}
-
-.price-card h3 {
-    margin-top: 0;
-}
-
-.price {
-    font-size: 1.8rem;
-    font-weight: 700;
-    color: #173b67;
-}
-
-
-/* METRIC */
-
-[data-testid="stMetricValue"] {
-    color: #173b67;
-}
-
-
-/* HAUPTBUTTON */
-
-div.stButton > button[kind="primary"] {
-    background: linear-gradient(
-        135deg,
-        #173b67,
-        #2b72c7
-    );
-    border: none;
-    color: white;
-    border-radius: 0.65rem;
-    font-weight: 600;
-}
-
-
-/* HAUPTBUTTON HOVER */
-
-div.stButton > button[kind="primary"]:hover {
-    background: #173b67;
-    color: white;
-    border: none;
-}
-
-</style>
-""",
-    unsafe_allow_html=True,
+    div.stButton > button[kind="primary"]:hover {
+        background: #173b67;
+        color: white;
+        border: none;
+    }
+    </style>
+    """
 )
 
 
@@ -173,116 +144,62 @@ def go_to_checker():
 
 def show_start():
 
-    st.markdown(
+    st.html(
         """
         <div class="hero">
-
-            <h1>
-                Bewerbungshelfer AI
-            </h1>
-
+            <h1>Bewerbungshelfer AI</h1>
             <p>
-                Prüfe, wie gut dein Profil zu einer
-                Stellenanzeige passt und verbessere gezielt
-                die entscheidenden Punkte.
+                Prüfe, wie gut dein Profil zu einer Stellenanzeige passt
+                und verbessere gezielt die entscheidenden Punkte.
             </p>
-
         </div>
-        """,
-        unsafe_allow_html=True,
+        """
     )
 
-
-    st.subheader(
-        "So funktioniert es"
-    )
-
+    st.subheader("So funktioniert es")
 
     col1, col2, col3 = st.columns(3)
 
-
-    # -----------------------------------------------------
-    # KARTE 1
-    # -----------------------------------------------------
-
     with col1:
-
-        st.markdown(
+        st.html(
             """
             <div class="card">
-
-                <h3>
-                    1. Stellenanzeige einfügen
-                </h3>
-
+                <h3>1. Stellenanzeige einfügen</h3>
                 <p>
                     Die App erkennt Stellenbezeichnung,
-                    Anforderungen und wichtige
-                    Schlüsselbegriffe.
+                    Anforderungen und wichtige Schlüsselbegriffe.
                 </p>
-
             </div>
-            """,
-            unsafe_allow_html=True,
+            """
         )
-
-
-    # -----------------------------------------------------
-    # KARTE 2
-    # -----------------------------------------------------
 
     with col2:
-
-        st.markdown(
+        st.html(
             """
             <div class="card">
-
-                <h3>
-                    2. Lebenslauf prüfen
-                </h3>
-
+                <h3>2. Lebenslauf prüfen</h3>
                 <p>
                     Lade PDF, DOCX oder TXT hoch
-                    oder trage deine Erfahrungen
-                    manuell ein.
+                    oder trage deine Erfahrungen manuell ein.
                 </p>
-
             </div>
-            """,
-            unsafe_allow_html=True,
+            """
         )
-
-
-    # -----------------------------------------------------
-    # KARTE 3
-    # -----------------------------------------------------
 
     with col3:
-
-        st.markdown(
+        st.html(
             """
             <div class="card">
-
-                <h3>
-                    3. Ergebnis erhalten
-                </h3>
-
+                <h3>3. Ergebnis erhalten</h3>
                 <p>
                     Du bekommst einen Match-Score,
-                    fehlende Anforderungen und
-                    einen Anschreiben-Entwurf.
+                    fehlende Anforderungen und einen Anschreiben-Entwurf.
                 </p>
-
             </div>
-            """,
-            unsafe_allow_html=True,
+            """
         )
 
-
-    st.markdown(
-        "### Bereits enthalten"
-    )
-
+    st.markdown("### Bereits enthalten")
 
     st.write(
         "✓ Stellenanzeigen analysieren  \n"
@@ -292,15 +209,11 @@ def show_start():
         "✓ Anschreiben-Entwurf erstellen"
     )
 
-
     st.info(
-        "Die App befindet sich aktuell in der "
-        "kostenlosen Beta. Premium-Funktionen "
-        "werden erst aktiviert, wenn Benutzerkonten, "
-        "Datenschutz und Zahlungsabwicklung "
-        "vollständig umgesetzt sind."
+        "Die App befindet sich aktuell in der kostenlosen Beta. "
+        "Premium-Funktionen werden erst aktiviert, wenn Benutzerkonten, "
+        "Datenschutz und Zahlungsabwicklung vollständig umgesetzt sind."
     )
-
 
     st.button(
         "Kostenlos Bewerbung prüfen",
@@ -316,140 +229,74 @@ def show_start():
 
 def show_prices():
 
-    st.markdown(
+    st.html(
         """
         <div class="hero">
-
-            <h1>
-                Preise
-            </h1>
-
+            <h1>Preise</h1>
             <p>
-                Kostenlos starten.
-                Premium erst aktivieren,
-                wenn die erweiterten Funktionen
-                vollständig bereit sind.
+                Kostenlos starten. Premium erst aktivieren,
+                wenn die erweiterten Funktionen vollständig bereit sind.
             </p>
-
         </div>
-        """,
-        unsafe_allow_html=True,
+        """
     )
-
 
     col1, col2, col3 = st.columns(3)
 
-
-    # -----------------------------------------------------
-    # FREE
-    # -----------------------------------------------------
-
     with col1:
-
-        st.markdown(
+        st.html(
             """
             <div class="price-card">
-
-                <h3>
-                    Free
-                </h3>
-
-                <div class="price">
-                    0 €
-                </div>
-
-                <p>
-                    Zum Testen und für
-                    einzelne Bewerbungen.
-                </p>
-
+                <h3>Free</h3>
+                <div class="price">0 €</div>
+                <p>Zum Testen und für einzelne Bewerbungen.</p>
                 <p>
                     ✓ Basis-Analyse<br>
                     ✓ Match-Score<br>
                     ✓ fehlende Anforderungen<br>
                     ✓ Anschreiben-Entwurf
                 </p>
-
             </div>
-            """,
-            unsafe_allow_html=True,
+            """
         )
 
-
-    # -----------------------------------------------------
-    # 5 BEWERBUNGEN
-    # -----------------------------------------------------
-
     with col2:
-
-        st.markdown(
+        st.html(
             """
             <div class="price-card">
-
-                <h3>
-                    5 Bewerbungen
-                </h3>
-
-                <div class="price">
-                    12,99 €
-                </div>
-
-                <p>
-                    Geplant
-                </p>
-
+                <h3>5 Bewerbungen</h3>
+                <div class="price">12,99 €</div>
+                <p>Geplant</p>
                 <p>
                     ✓ vollständige Optimierung<br>
                     ✓ mehrere Bewerbungen<br>
                     ✓ erweiterte Anschreiben<br>
                     ✓ Export-Funktionen
                 </p>
-
             </div>
-            """,
-            unsafe_allow_html=True,
+            """
         )
 
-
-    # -----------------------------------------------------
-    # PRO
-    # -----------------------------------------------------
-
     with col3:
-
-        st.markdown(
+        st.html(
             """
             <div class="price-card">
-
-                <h3>
-                    Pro
-                </h3>
-
-                <div class="price">
-                    9,99 € / Monat
-                </div>
-
-                <p>
-                    Geplant
-                </p>
-
+                <h3>Pro</h3>
+                <div class="price">9,99 € / Monat</div>
+                <p>Geplant</p>
                 <p>
                     ✓ mehrere Bewerbungen<br>
                     ✓ Premium-Analyse<br>
                     ✓ Bewerbungshistorie<br>
                     ✓ weitere KI-Funktionen
                 </p>
-
             </div>
-            """,
-            unsafe_allow_html=True,
+            """
         )
 
-
     st.caption(
-        "Die kostenpflichtigen Tarife sind aktuell "
-        "noch nicht buchbar. Die Preise dienen "
-        "zunächst als Produktentwurf."
+        "Die kostenpflichtigen Tarife sind aktuell noch nicht buchbar. "
+        "Die Preise dienen zunächst als Produktentwurf."
     )
 
 
@@ -459,39 +306,28 @@ def show_prices():
 
 def show_checker():
 
-    st.markdown(
+    st.html(
         """
         <div class="hero">
-
-            <h1>
-                Bewerbung prüfen
-            </h1>
-
+            <h1>Bewerbung prüfen</h1>
             <p>
                 Stellenanzeige verstehen.
                 Profil prüfen.
                 Bewerbung gezielt verbessern.
             </p>
-
         </div>
-        """,
-        unsafe_allow_html=True,
+        """
     )
-
 
     st.caption(
-        "Kostenlose Beta · Unterstützung bei der "
-        "Vorbereitung – keine automatische "
-        "Einstellungsentscheidung."
+        "Kostenlose Beta · Unterstützung bei der Vorbereitung "
+        "– keine automatische Einstellungsentscheidung."
     )
-
 
     st.info(
-        "Datenschutz: Hochgeladene Lebensläufe "
-        "werden nur während dieser Sitzung verarbeitet. "
-        "Bitte prüfe alle automatisch erkannten Angaben."
+        "Datenschutz: Hochgeladene Lebensläufe werden nur während "
+        "dieser Sitzung verarbeitet. Bitte prüfe alle automatisch erkannten Angaben."
     )
-
 
     # -----------------------------------------------------
     # SCHRITT 1
@@ -502,11 +338,7 @@ def show_checker():
         text="Schritt 1 von 4 · Stellenanzeige",
     )
 
-
-    st.subheader(
-        "1. Stellenanzeige"
-    )
-
+    st.subheader("1. Stellenanzeige")
 
     job_ad = st.text_area(
         "Komplette Stellenanzeige einfügen",
@@ -518,30 +350,20 @@ def show_checker():
         ),
     )
 
-
     col_a, col_b = st.columns(2)
 
-
     with col_a:
-
         role = st.text_input(
             "Stellenbezeichnung (optional)",
-            placeholder=(
-                "z. B. Projektmanager (m/w/d)"
-            ),
+            placeholder="z. B. Projektmanager (m/w/d)",
         )
 
-
     with col_b:
-
         requirements_text = st.text_area(
             "Anforderungen manuell",
             height=100,
-            placeholder=(
-                "Eine Anforderung pro Zeile"
-            ),
+            placeholder="Eine Anforderung pro Zeile",
         )
-
 
     # -----------------------------------------------------
     # AUTOMATISCHE ERKENNUNG
@@ -549,28 +371,14 @@ def show_checker():
 
     if job_ad.strip():
 
-        detected_role = extract_role(
-            job_ad
-        )
+        detected_role = extract_role(job_ad)
+        detected_requirements = extract_requirements(job_ad)
 
-        detected_requirements = extract_requirements(
-            job_ad
-        )
-
-
-        if (
-            not role.strip()
-            and detected_role
-        ):
+        if not role.strip() and detected_role:
             role = detected_role
 
-
-        if (
-            not requirements_text.strip()
-            and detected_requirements
-        ):
+        if not requirements_text.strip() and detected_requirements:
             requirements_text = detected_requirements
-
 
         with st.expander(
             "Erkannte Stelleninformationen prüfen",
@@ -583,14 +391,12 @@ def show_checker():
                 key="detected_role",
             )
 
-
             requirements_text = st.text_area(
                 "Erkannte Anforderungen",
                 value=requirements_text,
                 height=160,
                 key="detected_requirements",
             )
-
 
     # -----------------------------------------------------
     # SCHRITT 2
@@ -601,24 +407,13 @@ def show_checker():
         text="Schritt 2 von 4 · Lebenslauf",
     )
 
-
-    st.subheader(
-        "2. Lebenslauf und persönliche Daten"
-    )
-
+    st.subheader("2. Lebenslauf und persönliche Daten")
 
     uploaded_resume = st.file_uploader(
         "Lebenslauf hochladen",
-        type=[
-            "pdf",
-            "docx",
-            "txt",
-        ],
-        help=(
-            "Unterstützt PDF, DOCX und TXT."
-        ),
+        type=["pdf", "docx", "txt"],
+        help="Unterstützt PDF, DOCX und TXT.",
     )
-
 
     # -----------------------------------------------------
     # LEBENSLAUF AUSLESEN
@@ -627,66 +422,39 @@ def show_checker():
     if (
         uploaded_resume is not None
         and uploaded_resume.name
-        != st.session_state.get(
-            "resume_filename"
-        )
+        != st.session_state.get("resume_filename")
     ):
 
         try:
 
-            resume_text = extract_resume_text(
-                uploaded_resume
-            )
+            resume_text = extract_resume_text(uploaded_resume)
 
+            st.session_state["resume_text"] = resume_text
 
-            st.session_state[
-                "resume_text"
-            ] = resume_text
-
-
-            st.session_state[
-                "resume_profile"
-            ] = extract_resume_profile(
+            st.session_state["resume_profile"] = extract_resume_profile(
                 resume_text
             )
 
-
-            st.session_state[
-                "resume_filename"
-            ] = uploaded_resume.name
-
+            st.session_state["resume_filename"] = uploaded_resume.name
 
             st.success(
                 f"{uploaded_resume.name} wurde gelesen. "
                 "Bitte die Vorschläge prüfen."
             )
 
-
         except ValueError as exc:
 
-            st.session_state[
-                "resume_text"
-            ] = ""
+            st.session_state["resume_text"] = ""
 
-
-            st.session_state[
-                "resume_profile"
-            ] = {
+            st.session_state["resume_profile"] = {
                 "experience": "",
                 "qualifications": "",
                 "focus": "",
             }
 
+            st.error(str(exc))
 
-            st.error(
-                str(exc)
-            )
-
-
-    profile = st.session_state[
-        "resume_profile"
-    ]
-
+    profile = st.session_state["resume_profile"]
 
     # -----------------------------------------------------
     # AUSGELESENER TEXT
@@ -694,22 +462,14 @@ def show_checker():
 
     with st.expander(
         "Erkannten Lebenslauftext anzeigen",
-        expanded=bool(
-            st.session_state[
-                "resume_text"
-            ]
-        ),
+        expanded=bool(st.session_state["resume_text"]),
     ):
 
-        if st.session_state[
-            "resume_text"
-        ]:
+        if st.session_state["resume_text"]:
 
             st.text_area(
                 "Ausgelesener Text",
-                value=st.session_state[
-                    "resume_text"
-                ],
+                value=st.session_state["resume_text"],
                 height=180,
                 key="resume_text_review",
             )
@@ -718,10 +478,8 @@ def show_checker():
 
             st.caption(
                 "Noch kein Lebenslauf hochgeladen. "
-                "Du kannst die Felder auch "
-                "manuell ausfüllen."
+                "Du kannst die Felder auch manuell ausfüllen."
             )
-
 
     # -----------------------------------------------------
     # BEWERBERPROFIL
@@ -729,24 +487,14 @@ def show_checker():
 
     experience = st.text_area(
         "Berufserfahrung",
-        value=profile.get(
-            "experience",
-            "",
-        ),
+        value=profile.get("experience", ""),
         height=120,
-        placeholder=(
-            "Nur echte Erfahrungen angeben."
-        ),
+        placeholder="Nur echte Erfahrungen angeben.",
     )
 
-
     qualifications_text = st.text_area(
-        "Qualifikationen, Abschlüsse, "
-        "Führerscheine und Sprachen",
-        value=profile.get(
-            "qualifications",
-            "",
-        ),
+        "Qualifikationen, Abschlüsse, Führerscheine und Sprachen",
+        value=profile.get("qualifications", ""),
         height=120,
         placeholder=(
             "z. B. Ausbildung, Abschluss, "
@@ -754,20 +502,14 @@ def show_checker():
         ),
     )
 
-
     focus = st.text_area(
         "Persönliche Stärken",
-        value=profile.get(
-            "focus",
-            "",
-        ),
+        value=profile.get("focus", ""),
         height=90,
         placeholder=(
-            "z. B. zuverlässige und "
-            "selbstständige Arbeitsweise"
+            "z. B. zuverlässige und selbstständige Arbeitsweise"
         ),
     )
-
 
     # -----------------------------------------------------
     # SCHRITT 3
@@ -778,24 +520,17 @@ def show_checker():
         text="Schritt 3 von 4 · Analyse",
     )
 
-
-    st.subheader(
-        "3. Analyse"
-    )
-
+    st.subheader("3. Analyse")
 
     st.caption(
-        "Nicht belegte Qualifikationen "
-        "werden nicht ergänzt."
+        "Nicht belegte Qualifikationen werden nicht ergänzt."
     )
-
 
     submitted = st.button(
         "Kostenlos analysieren",
         type="primary",
         use_container_width=True,
     )
-
 
     # -----------------------------------------------------
     # ANALYSE
@@ -804,23 +539,10 @@ def show_checker():
     if submitted:
 
         role = role.strip()
-
-        requirements_text = (
-            requirements_text.strip()
-        )
-
-        qualifications_text = (
-            qualifications_text.strip()
-        )
-
+        requirements_text = requirements_text.strip()
+        qualifications_text = qualifications_text.strip()
         experience = experience.strip()
-
         focus = focus.strip()
-
-
-        # -------------------------------------------------
-        # VALIDIERUNG
-        # -------------------------------------------------
 
         if not role:
 
@@ -828,65 +550,40 @@ def show_checker():
                 "Bitte eine Stellenbezeichnung eingeben."
             )
 
-
         elif not requirements_text:
 
             st.error(
-                "Bitte mindestens eine "
-                "Stellenanforderung eingeben."
+                "Bitte mindestens eine Stellenanforderung eingeben."
             )
-
 
         elif not qualifications_text:
 
             st.error(
-                "Bitte mindestens eine "
-                "vorhandene Qualifikation eingeben."
+                "Bitte mindestens eine vorhandene Qualifikation eingeben."
             )
 
-
         else:
-
-            # ---------------------------------------------
-            # DATEN AUFBEREITEN
-            # ---------------------------------------------
 
             requirements = split_items(
                 requirements_text
             )
 
-
             qualifications = split_items(
                 qualifications_text
             )
 
-
-            # ---------------------------------------------
-            # MATCHING
-            # ---------------------------------------------
-
-            matched, missing, details = (
-                compare_requirements(
-                    requirements,
-                    experience,
-                    qualifications_text,
-                    focus,
-                )
+            matched, missing, details = compare_requirements(
+                requirements,
+                experience,
+                qualifications_text,
+                focus,
             )
-
 
             match_rate = calculate_match_rate(
                 details
             )
 
-
-            # ---------------------------------------------
-            # ANSCHREIBEN
-            # ---------------------------------------------
-
-            st.session_state[
-                "letter"
-            ] = build_letter(
+            st.session_state["letter"] = build_letter(
                 role,
                 experience,
                 qualifications,
@@ -894,45 +591,27 @@ def show_checker():
                 matched,
             )
 
-
-            # ---------------------------------------------
+            # -------------------------------------------------
             # SCHRITT 4
-            # ---------------------------------------------
+            # -------------------------------------------------
 
             st.progress(
                 1.0,
-                text=(
-                    "Schritt 4 von 4 · Ergebnis"
-                ),
+                text="Schritt 4 von 4 · Ergebnis",
             )
 
-
-            st.subheader(
-                "4. Ergebnis"
-            )
-
-
-            # ---------------------------------------------
-            # MATCH-SCORE
-            # ---------------------------------------------
+            st.subheader("4. Ergebnis")
 
             st.metric(
                 "Match-Score",
                 f"{match_rate} %",
                 help=(
-                    "Orientierung anhand der "
-                    "erkannten Anforderungen. "
+                    "Orientierung anhand der erkannten Anforderungen. "
                     "Kein Einstellungsurteil."
                 ),
             )
 
-
             col1, col2 = st.columns(2)
-
-
-            # ---------------------------------------------
-            # PASSENDE ANFORDERUNGEN
-            # ---------------------------------------------
 
             with col1:
 
@@ -940,14 +619,10 @@ def show_checker():
                     "**Passende Anforderungen**"
                 )
 
-
                 if matched:
 
                     for item in matched:
-
-                        st.success(
-                            item
-                        )
+                        st.success(item)
 
                 else:
 
@@ -955,41 +630,22 @@ def show_checker():
                         "Keine eindeutigen Treffer"
                     )
 
-
-            # ---------------------------------------------
-            # FEHLENDE ANFORDERUNGEN
-            # ---------------------------------------------
-
             with col2:
 
                 st.markdown(
-                    "**Fehlende oder nicht "
-                    "erkannte Anforderungen**"
+                    "**Fehlende oder nicht erkannte Anforderungen**"
                 )
-
 
                 if missing:
 
                     for item in missing:
-
-                        st.warning(
-                            item
-                        )
+                        st.warning(item)
 
                 else:
 
-                    st.success(
-                        "Keine"
-                    )
+                    st.success("Keine")
 
-
-            # ---------------------------------------------
-            # ZUSAMMENFASSUNG
-            # ---------------------------------------------
-
-            with st.expander(
-                "Zusammenfassung"
-            ):
+            with st.expander("Zusammenfassung"):
 
                 st.text(
                     build_summary(
@@ -1001,57 +657,38 @@ def show_checker():
                     )
                 )
 
-
-            # ---------------------------------------------
-            # VERBESSERUNGEN
-            # ---------------------------------------------
-
             st.subheader(
                 "Verbesserungsvorschläge"
             )
 
-
             if missing:
 
                 st.warning(
-                    "Prüfe, ob du zu den fehlenden "
-                    "Anforderungen echte Nachweise "
-                    "oder konkrete Beispiele ergänzen "
-                    "kannst. Erfinde keine Angaben."
+                    "Prüfe, ob du zu den fehlenden Anforderungen "
+                    "echte Nachweise oder konkrete Beispiele ergänzen kannst. "
+                    "Erfinde keine Angaben."
                 )
 
             else:
 
                 st.success(
-                    "Alle erkannten Anforderungen "
-                    "haben mindestens eine passende "
-                    "Angabe im Profil."
+                    "Alle erkannten Anforderungen haben mindestens "
+                    "eine passende Angabe im Profil."
                 )
-
-
-            # ---------------------------------------------
-            # ANSCHREIBEN
-            # ---------------------------------------------
 
             st.subheader(
                 "Anschreiben-Entwurf"
             )
 
-
             st.text_area(
                 "Entwurf",
-                value=st.session_state[
-                    "letter"
-                ],
+                value=st.session_state["letter"],
                 height=320,
             )
 
-
             st.download_button(
                 "Anschreiben als TXT herunterladen",
-                data=st.session_state[
-                    "letter"
-                ],
+                data=st.session_state["letter"],
                 file_name="anschreiben.txt",
                 mime="text/plain",
             )
@@ -1065,48 +702,33 @@ st.sidebar.title(
     "Bewerbungshelfer AI"
 )
 
-
 if st.sidebar.button(
     "Start",
     use_container_width=True,
 ):
-
-    st.session_state[
-        "page"
-    ] = "Start"
-
+    st.session_state["page"] = "Start"
 
 if st.sidebar.button(
     "Bewerbung prüfen",
     use_container_width=True,
 ):
-
-    st.session_state[
-        "page"
-    ] = "Bewerbung prüfen"
-
+    st.session_state["page"] = "Bewerbung prüfen"
 
 if st.sidebar.button(
     "Preise",
     use_container_width=True,
 ):
-
-    st.session_state[
-        "page"
-    ] = "Preise"
+    st.session_state["page"] = "Preise"
 
 
 st.sidebar.divider()
-
 
 st.sidebar.caption(
     "Beta-Version"
 )
 
-
 st.sidebar.caption(
-    "Keine automatische "
-    "Einstellungsentscheidung."
+    "Keine automatische Einstellungsentscheidung."
 )
 
 
@@ -1114,25 +736,14 @@ st.sidebar.caption(
 # SEITENANZEIGE
 # ---------------------------------------------------------
 
-if (
-    st.session_state["page"]
-    == "Start"
-):
+if st.session_state["page"] == "Start":
 
     show_start()
 
-
-elif (
-    st.session_state["page"]
-    == "Bewerbung prüfen"
-):
+elif st.session_state["page"] == "Bewerbung prüfen":
 
     show_checker()
 
-
-elif (
-    st.session_state["page"]
-    == "Preise"
-):
+elif st.session_state["page"] == "Preise":
 
     show_prices()
