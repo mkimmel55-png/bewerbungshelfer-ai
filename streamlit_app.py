@@ -18,6 +18,7 @@ from auth import (
     logout,
     register,
 )
+from apify_jobs import DEFAULT_ACTOR, search_jobs
 from web_app import (
     compare_requirements,
     calculate_match_rate,
@@ -676,9 +677,46 @@ def show_checker():
     )
 
 
+    with st.expander("Stelle bei LinkedIn suchen (Apify)"):
+        search_col_a, search_col_b = st.columns(2)
+        search_keywords = search_col_a.text_input(
+            "Suchbegriff", placeholder="z. B. LKW Fahrer CE"
+        )
+        search_location = search_col_b.text_input(
+            "Ort", placeholder="z. B. Freiburg"
+        )
+        if st.button("Stellen suchen"):
+            try:
+                cfg = st.secrets.get("apify", {})
+                st.session_state["apify_results"] = search_jobs(
+                    cfg.get("token", ""),
+                    search_keywords,
+                    search_location,
+                    actor=cfg.get("actor", DEFAULT_ACTOR),
+                )
+            except Exception as exc:
+                st.error(f"Suche fehlgeschlagen: {exc}")
+
+        results = st.session_state.get("apify_results", [])
+        if results:
+            labels = [
+                f"{j['title']} · {j['company']} · {j['location']}"
+                for j in results
+            ]
+            picked = st.selectbox(
+                "Treffer", range(len(results)),
+                format_func=lambda i: labels[i],
+            )
+            if st.button("In Stellenanzeige übernehmen"):
+                st.session_state["job_ad_input"] = (
+                    results[picked]["description"]
+                )
+                st.rerun()
+
     job_ad = st.text_area(
         "Komplette Stellenanzeige einfügen",
         height=240,
+        key="job_ad_input",
         placeholder=(
             "Kopiere hier die vollständige Anzeige hinein. "
             "Stellenbezeichnung, Anforderungen, Erfahrung "
