@@ -806,7 +806,12 @@ def show_checker():
             "docx",
             "txt",
         ],
-        help="Unterstützt PDF, DOCX und TXT.",
+        help=(
+            "Unterstützt PDF, DOCX und TXT. LinkedIn-Profil: "
+            "Profil öffnen, 'Mehr' → 'Als PDF speichern' und die "
+            "Datei hier hochladen. Deutsche Profile werden am "
+            "besten erkannt."
+        ),
     )
 
 
